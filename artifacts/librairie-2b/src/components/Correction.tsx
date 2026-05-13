@@ -46,6 +46,9 @@ function Correction({ onNavigate }: CorrectionProps) {
   const [showEcoleDropdown, setShowEcoleDropdown] = useState(false)
   const [activeChildIndex, setActiveChildIndex] = useState<number | null>(null)
   const [filteredEcoles, setFilteredEcoles] = useState<string[]>([])
+  const [deletingOrder, setDeletingOrder] = useState<GroupedOrder | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [printingOrder, setPrintingOrder] = useState<GroupedOrder | null>(null)
 
   const loadRecentOrders = async () => {
     try {
@@ -102,6 +105,29 @@ function Correction({ onNavigate }: CorrectionProps) {
   }, [])
 
   useEffect(() => { loadRecentOrders() }, [])
+
+  const handleDeleteOrder = async () => {
+    if (!deletingOrder) return
+    setIsDeleting(true)
+    try {
+      const ids = deletingOrder.children.map(c => c.id)
+      await Promise.all(ids.map(id => supabase.from('students').delete().eq('id', id)))
+      await loadRecentOrders()
+      setDeletingOrder(null)
+    } catch (error) {
+      alert('Erreur lors de la suppression')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handlePrintOrder = (order: GroupedOrder) => {
+    setPrintingOrder(order)
+    setTimeout(() => {
+      window.print()
+      setPrintingOrder(null)
+    }, 100)
+  }
 
   const handleEditOrder = (order: GroupedOrder) => {
     setEditingOrder(order)
@@ -224,6 +250,7 @@ function Correction({ onNavigate }: CorrectionProps) {
   }
 
   return (
+    <>
     <div className="max-w-5xl mx-auto px-4 pb-12">
       <div className="mb-8">
         <button onClick={() => onNavigate('espace-client')} className="px-5 py-2 bg-white border border-parchment-300 text-espresso-800 rounded-full font-semibold hover:bg-parchment-200 transition-all shadow-sm text-sm uppercase tracking-wide">
@@ -263,7 +290,11 @@ function Correction({ onNavigate }: CorrectionProps) {
                   <h3 className="text-xl font-bold text-espresso-900 mb-1">{group.nom}</h3>
                   <span className="text-sm font-medium text-espresso-600">{new Date(group.created_at).toLocaleString('fr-FR')}</span>
                 </div>
-                <button onClick={() => handleEditOrder(group)} className="px-6 py-2 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-amber-700 shadow-md">Modifier</button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handlePrintOrder(group)} className="px-4 py-2 bg-espresso-900 text-parchment-100 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-espresso-950 shadow-md flex items-center gap-2"><Printer className="w-4 h-4" /> Imprimer</button>
+                  <button onClick={() => handleEditOrder(group)} className="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-amber-700 shadow-md">Modifier</button>
+                  <button onClick={() => setDeletingOrder(group)} className="px-4 py-2 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-terracotta-600 shadow-md flex items-center gap-2"><Trash2 className="w-4 h-4" /> Supprimer</button>
+                </div>
               </div>
               <div className="p-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -288,6 +319,54 @@ function Correction({ onNavigate }: CorrectionProps) {
         )}
       </div>
     </div>
+
+    {deletingOrder && (
+      <div className="fixed inset-0 bg-espresso-950/60 flex items-center justify-center z-50 px-4">
+        <div className="bg-white rounded-3xl shadow-book-hover border border-parchment-300 p-8 max-w-md w-full">
+          <h2 className="text-xl font-heading font-bold text-espresso-900 mb-3">Supprimer la commande ?</h2>
+          <p className="text-espresso-600 mb-2">Cette action est irréversible. La commande de <span className="font-bold text-espresso-900">{deletingOrder.nom}</span> et ses {deletingOrder.children.length} enfant(s) seront définitivement supprimés.</p>
+          <div className="flex gap-3 mt-6">
+            <button onClick={() => setDeletingOrder(null)} disabled={isDeleting} className="flex-1 px-5 py-3 bg-parchment-200 text-espresso-800 rounded-xl font-bold uppercase tracking-wide hover:bg-parchment-300 transition-colors text-sm">Annuler</button>
+            <button onClick={handleDeleteOrder} disabled={isDeleting} className="flex-1 px-5 py-3 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wide hover:bg-terracotta-600 transition-colors text-sm disabled:opacity-50">
+              {isDeleting ? 'Suppression...' : 'Confirmer la suppression'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {printingOrder && (
+      <div id="print-section" style={{ display: 'none' }}>
+        <div style={{ fontFamily: 'monospace', fontSize: '8px', lineHeight: '1.4' }}>
+          <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>LIBRAIRIE 2B</div>
+          <div style={{ textAlign: 'center', marginBottom: '6px' }}>Reçu de commande</div>
+          <div style={{ borderTop: '1px dashed #000', marginBottom: '4px' }} />
+          <div><span style={{ fontWeight: 'bold' }}>Client:</span> {printingOrder.nom}</div>
+          {printingOrder.telephone && <div><span style={{ fontWeight: 'bold' }}>Tél:</span> {printingOrder.telephone}</div>}
+          {printingOrder.email && <div><span style={{ fontWeight: 'bold' }}>Email:</span> {printingOrder.email}</div>}
+          <div><span style={{ fontWeight: 'bold' }}>Date:</span> {new Date(printingOrder.created_at).toLocaleString('fr-FR')}</div>
+          {printingOrder.avance && <div><span style={{ fontWeight: 'bold' }}>Avance:</span> {printingOrder.avance} DHS</div>}
+          {printingOrder.couverture_demandee && <div><span style={{ fontWeight: 'bold' }}>Couverture:</span> Oui</div>}
+          <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+          {printingOrder.children.map((child, i) => (
+            <div key={i} style={{ marginBottom: '4px' }}>
+              <div style={{ fontWeight: 'bold' }}>Enfant {i + 1} — Code: {child.code}</div>
+              <div>École: {child.ecole}</div>
+              <div>Niveau: {child.niveau}{child.genre ? ` (${child.genre})` : ''}</div>
+            </div>
+          ))}
+          {printingOrder.note && (
+            <>
+              <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+              <div><span style={{ fontWeight: 'bold' }}>Note:</span> {printingOrder.note}</div>
+            </>
+          )}
+          <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+          <div style={{ textAlign: 'center', fontSize: '7px' }}>Merci de votre confiance</div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 
