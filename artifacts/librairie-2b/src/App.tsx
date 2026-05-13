@@ -9,6 +9,7 @@ import FollowUp from './components/FollowUp'
 import Correction from './components/Correction'
 import CouverturePage from './components/CouverturePage'
 import ZakariaPage from './components/ZakariaPage'
+
 type Page = 'client' | 'employee' | 'manager' | 'ecole' | 'home' | 'espace-client' | 'follow-up' | 'correction' | 'couverture' | 'zakaria'
 
 function App() {
@@ -26,23 +27,26 @@ function App() {
   }
 
   const renderHomePage = () => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-indigo-100 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] px-4 py-12 md:py-20 relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-parchment-100/50 to-parchment-200/80 pointer-events-none" />
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <div className="flex items-center justify-center space-x-3 mb-6">
-            <BookOpen className="h-16 w-16 text-gray-900" />
+            <div className="w-20 h-20 bg-espresso-900 rounded-full flex items-center justify-center shadow-lg">
+              <BookOpen className="h-10 w-10 text-parchment-100" />
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-5xl md:text-6xl font-heading font-bold text-espresso-900 mb-6">
             Librairie 2B
           </h1>
-          <p className="text-lg md:text-xl text-gray-800 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-espresso-700 max-w-2xl mx-auto font-medium">
             Système de gestion des livres scolaires. Sélectionnez votre espace pour commencer.
           </p>
         </div>
 
         {/* Page Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Espace Client */}
           <button
             onClick={() => {
@@ -52,27 +56,27 @@ function App() {
                 setCurrentPage('espace-client-auth')
               }
             }}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-200 backdrop-blur-sm"
+            className="group bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-left shadow-book hover:shadow-book-hover transition-all duration-300 transform hover:-translate-y-1 border border-parchment-300 flex flex-col"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-blue-100 shadow-lg">
-                <Users className="h-8 w-8 text-blue-800" />
+            <div className="flex items-start justify-between mb-8">
+              <div className="p-4 rounded-xl bg-parchment-200 text-amber-700 shadow-sm border border-parchment-300 group-hover:bg-amber-600 group-hover:text-white transition-colors duration-300">
+                <Users className="h-8 w-8" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <ArrowRight className="h-6 w-6 text-espresso-300 group-hover:text-amber-600 transition-colors duration-300 transform group-hover:translate-x-1" />
             </div>
             
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            <h3 className="text-3xl font-heading font-bold text-espresso-900 mb-4">
               Espace Client
             </h3>
             
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-600 mb-8 leading-relaxed flex-grow">
               Accès aux services clients : commandes, gestion et administration
             </p>
             
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide ${
               isEspaceClientAuthenticated 
-                ? 'bg-green-200 text-green-900' 
-                : 'bg-yellow-200 text-yellow-900'
+                ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                : 'bg-parchment-200 text-espresso-700 border border-parchment-300'
             }`}>
               {isEspaceClientAuthenticated ? 'Connecté' : 'Connexion requise'}
             </div>
@@ -81,56 +85,58 @@ function App() {
           {/* Espace Adjoint */}
           <button
             onClick={() => handlePageSelect('employee')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-green-200 backdrop-blur-sm"
+            className="group bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-left shadow-book hover:shadow-book-hover transition-all duration-300 transform hover:-translate-y-1 border border-parchment-300 flex flex-col"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-green-100 shadow-lg">
-                <Search className="h-8 w-8 text-green-800" />
+            <div className="flex items-start justify-between mb-8">
+              <div className="p-4 rounded-xl bg-parchment-200 text-espresso-700 shadow-sm border border-parchment-300 group-hover:bg-espresso-800 group-hover:text-white transition-colors duration-300">
+                <Search className="h-8 w-8" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <ArrowRight className="h-6 w-6 text-espresso-300 group-hover:text-espresso-800 transition-colors duration-300 transform group-hover:translate-x-1" />
             </div>
             
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            <h3 className="text-3xl font-heading font-bold text-espresso-900 mb-4">
               Espace Adjoint
             </h3>
             
-            <p className="text-gray-800 mb-4 leading-relaxed">
-              Recherchez et gérez les commandes
+            <p className="text-espresso-600 mb-8 leading-relaxed flex-grow">
+              Recherchez et gérez les commandes des clients
             </p>
           </button>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 text-gray-500">
-          <p className="text-sm">
-            © 2025 Librairie 2B - Système de gestion des livres scolaires
-          </p>
+        <div className="text-center mt-16">
+          <div className="inline-block px-6 py-2 border-t border-parchment-300">
+            <p className="text-sm font-medium text-espresso-500 uppercase tracking-widest">
+              © 2025 Librairie 2B
+            </p>
+          </div>
         </div>
       </div>
     </div>
   )
 
   const renderEspaceClientPage = () => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-indigo-100 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] px-4 py-10 relative">
+      <div className="max-w-5xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <Users className="h-16 w-16 text-gray-900" />
+          <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
+            <Users className="h-10 w-10 text-parchment-100" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
             Espace Client
           </h1>
-          <p className="text-lg md:text-xl text-gray-800 max-w-2xl mx-auto">
+          <p className="text-lg text-espresso-600 max-w-2xl mx-auto font-medium">
             Choisissez le service dont vous avez besoin
           </p>
         </div>
 
         {/* Back Button */}
-        <div className="mb-8">
+        <div className="mb-8 flex justify-center">
           <button
             onClick={() => setCurrentPage('home')}
-            className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+            className="px-6 py-2.5 bg-white border border-parchment-300 text-espresso-800 rounded-full font-semibold hover:bg-parchment-200 hover:text-espresso-900 transition-all shadow-sm"
           >
             ← Retour au menu principal
           </button>
@@ -141,24 +147,20 @@ function App() {
           {/* Commande Client */}
           <button
             onClick={() => handlePageSelect('client')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-200 backdrop-blur-sm"
+            className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-blue-100 shadow-lg">
-                <BookOpen className="h-8 w-8 text-blue-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <BookOpen className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Commande Client
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Commande Client
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-600 mb-4 leading-relaxed">
               Passez votre commande de livres scolaires
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-parchment-200 text-espresso-700">
               Accès libre
             </div>
           </button>
@@ -166,24 +168,20 @@ function App() {
           {/* Follow Up */}
           <button
             onClick={() => handlePageSelect('follow-up')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-indigo-200 backdrop-blur-sm"
+            className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-indigo-100 shadow-lg">
-                <Search className="h-8 w-8 text-indigo-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <Search className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Suivi de Commande
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Follow Up
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-600 mb-4 leading-relaxed">
               Suivez le statut de votre commande
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-parchment-200 text-espresso-700">
               Accès libre
             </div>
           </button>
@@ -191,24 +189,20 @@ function App() {
           {/* Correction */}
           <button
             onClick={() => handlePageSelect('correction')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-orange-200 backdrop-blur-sm"
+            className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-orange-100 shadow-lg">
-                <Edit className="h-8 w-8 text-orange-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <Edit className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Correction
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Correction
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-600 mb-4 leading-relaxed">
               Consultez vos commandes récentes groupées
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-parchment-200 text-espresso-700">
               Accès libre
             </div>
           </button>
@@ -216,53 +210,45 @@ function App() {
           {/* Gestion des Écoles */}
           <button
             onClick={() => handlePageSelect('ecole')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-orange-200 backdrop-blur-sm"
+            className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-orange-100 shadow-lg">
-                <School className="h-8 w-8 text-orange-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <School className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Gestion des Écoles
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Gestion des Écoles
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-600 mb-4 leading-relaxed">
               Ajoutez ou supprimez des écoles
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-parchment-200 text-espresso-700">
               Accès libre
             </div>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-parchment-300">
           {/* Gestionnaire */}
           {currentUser !== 'lib2b@gmail.com' && (
           <button
             onClick={() => handlePageSelect('manager')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-purple-200 backdrop-blur-sm"
+            className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-purple-100 shadow-lg">
-                <BarChart3 className="h-8 w-8 text-purple-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-espresso-200 text-espresso-800 border border-espresso-300 group-hover:bg-espresso-800 group-hover:text-white transition-colors">
+                <BarChart3 className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Gestionnaire
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Gestionnaire
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-700 mb-4 leading-relaxed">
               Tableau de bord et statistiques
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
-              Accès libre
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-espresso-200 text-espresso-800">
+              Privé
             </div>
           </button>
           )}
@@ -271,25 +257,21 @@ function App() {
           {(currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com') && (
           <button
             onClick={() => handlePageSelect('couverture')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-purple-200 backdrop-blur-sm"
+            className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-purple-100 shadow-lg">
-                <BookOpen className="h-8 w-8 text-purple-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-espresso-200 text-espresso-800 border border-espresso-300 group-hover:bg-espresso-800 group-hover:text-white transition-colors">
+                <BookOpen className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Couverture
+              </h3>
             </div>
-            
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Couverture
-            </h3>
-            
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-700 mb-4 leading-relaxed">
               Commandes avec couverture demandée
             </p>
-            
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-200 text-green-900">
-              Accès libre
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-espresso-200 text-espresso-800">
+              Privé
             </div>
           </button>
           )}
@@ -298,24 +280,20 @@ function App() {
           {currentUser === 'aichabenzangue@gmail.com' && (
           <button
             onClick={() => handlePageSelect('zakaria')}
-            className="bg-white rounded-2xl p-8 text-left hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-gray-300 backdrop-blur-sm"
+            className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200 md:col-span-2 lg:col-span-1"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 rounded-xl bg-gray-100 shadow-lg">
-                <KeyRound className="h-8 w-8 text-gray-800" />
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 rounded-lg bg-espresso-200 text-espresso-800 border border-espresso-300 group-hover:bg-espresso-800 group-hover:text-white transition-colors">
+                <KeyRound className="h-6 w-6" />
               </div>
-              <ArrowRight className="h-6 w-6 text-gray-600" />
+              <h3 className="text-2xl font-heading font-bold text-espresso-900">
+                Zakaria
+              </h3>
             </div>
-
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Zakaria
-            </h3>
-
-            <p className="text-gray-800 mb-4 leading-relaxed">
+            <p className="text-espresso-700 mb-4 leading-relaxed">
               Gestion des identifiants de connexion
             </p>
-
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-900">
+            <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-espresso-900 text-parchment-100">
               Administration
             </div>
           </button>
@@ -335,8 +313,6 @@ function App() {
           <SimpleAuth 
             onAuthSuccess={() => {
               setIsEspaceClientAuthenticated(true)
-              // Determine user type based on current auth attempt
-              // This will be set by the auth component
               setCurrentPage('espace-client')
             }}
             title="Espace Client"
@@ -367,7 +343,6 @@ function App() {
     }
   }
 
-  // Show back button and header only when not on home page
   const showNavigation = currentPage !== 'home' && currentPage !== 'espace-client' && currentPage !== 'espace-client-auth' && (
     (currentPage === 'employee') || 
     (currentPage === 'follow-up' && isEspaceClientAuthenticated) ||
@@ -380,25 +355,27 @@ function App() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-indigo-100">
-      {/* Header - Only show when navigation should be visible */}
+    <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] font-sans text-espresso-900">
+      {/* Header */}
       {showNavigation && (
-        <header className="bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 shadow-lg border-b border-gray-800">
+        <header className="bg-espresso-900 text-parchment-100 shadow-md border-b border-espresso-800 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-20">
               <button
                 onClick={() => setCurrentPage('home')}
-                className="flex items-center space-x-3 text-gray-100 hover:text-white transition-colors"
+                className="flex items-center space-x-3 text-parchment-200 hover:text-white transition-colors group"
               >
-                <BookOpen className="h-8 w-8" />
-                <h1 className="text-xl font-bold">
+                <div className="p-2 bg-espresso-800 rounded-lg group-hover:bg-amber-600 transition-colors">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+                <h1 className="text-2xl font-heading font-bold tracking-tight">
                   Librairie 2B
                 </h1>
               </button>
               
               <button
                 onClick={() => setCurrentPage('home')}
-                className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                className="px-5 py-2 text-sm font-semibold bg-white/10 hover:bg-white/20 text-parchment-100 rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm"
               >
                 Retour à l'accueil
               </button>
@@ -408,7 +385,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={showNavigation ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : ""}>
+      <main className={showNavigation ? "max-w-7xl mx-auto py-10" : ""}>
         {renderPage()}
       </main>
     </div>

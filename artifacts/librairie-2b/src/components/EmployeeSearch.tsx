@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Search, Package, Check, X, LogIn } from 'lucide-react'
+import { Search, Package, Check, X, LogIn, Clock } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 
 interface EmployeeCredentials {
@@ -110,7 +110,6 @@ function EmployeeSearch() {
         .eq('id', bookList.id)
 
       if (!error) {
-        // Refresh the data
         const { data } = await supabase
           .from('students')
           .select('*')
@@ -128,25 +127,27 @@ function EmployeeSearch() {
     }
   }
 
-  // Show login form if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <Search className="h-12 w-12 text-blue-900 mx-auto mb-4" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]">
+        <div className="absolute inset-0 bg-gradient-to-b from-parchment-100/30 to-parchment-200/90 pointer-events-none" />
+        <div className="max-w-md w-full relative z-10">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-espresso-900 rounded-full mb-6 shadow-lg border-4 border-parchment-100">
+              <Search className="h-10 w-10 text-parchment-100" />
+            </div>
+            <h1 className="text-4xl font-heading font-bold text-espresso-900 mb-3">
               Espace Adjoint
             </h1>
-            <p className="text-sm md:text-base text-gray-600">
-              Connectez-vous pour accéder à la recherche de commandes
+            <p className="text-base text-espresso-600 font-medium">
+              Connectez-vous pour gérer les commandes
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-book p-8 md:p-10 border border-parchment-300">
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label htmlFor="username" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="username" className="block text-sm font-bold tracking-wide text-espresso-800 uppercase mb-2">
                   Nom d'utilisateur
                 </label>
                 <input
@@ -155,13 +156,13 @@ function EmployeeSearch() {
                   required
                   value={authForm.username}
                   onChange={(e) => setAuthForm(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 placeholder-espresso-300 font-medium"
                   placeholder="votre.nom"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="password" className="block text-sm font-bold tracking-wide text-espresso-800 uppercase mb-2">
                   Mot de passe
                 </label>
                 <input
@@ -170,21 +171,21 @@ function EmployeeSearch() {
                   required
                   value={authForm.password}
                   onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 placeholder-espresso-300 font-medium"
                   placeholder="••••••••"
                 />
               </div>
 
               {authError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-900 text-sm">{authError}</p>
+                <div className="bg-terracotta-500/10 border border-terracotta-500/20 rounded-xl p-4">
+                  <p className="text-terracotta-700 text-sm font-medium">{authError}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full bg-blue-800 text-white py-3 md:py-4 px-6 rounded-lg font-semibold hover:bg-blue-900 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base"
+                className="w-full bg-espresso-900 text-white py-4 px-6 rounded-xl font-bold tracking-wide hover:bg-espresso-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-md mt-2 uppercase text-sm"
               >
                 {isLoggingIn ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -197,10 +198,10 @@ function EmployeeSearch() {
               </button>
             </form>
             
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center pt-6 border-t border-parchment-200">
               <button
                 onClick={handleBackToHome}
-                className="text-blue-800 hover:text-blue-900 font-medium text-sm underline"
+                className="text-espresso-500 hover:text-amber-700 font-semibold text-sm transition-colors"
               >
                 Retour à l'accueil
               </button>
@@ -212,34 +213,34 @@ function EmployeeSearch() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
-      {/* Header with employee info and logout */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-sm text-gray-800">
-          Connecté en tant que: <span className="font-semibold text-blue-800">{currentEmployee}</span>
+    <div className="max-w-4xl mx-auto px-4 pb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-white rounded-xl shadow-sm border border-parchment-300 p-4 mb-8">
+        <div className="text-sm text-espresso-700 font-medium mb-4 sm:mb-0">
+          Connecté: <span className="font-bold text-espresso-900 ml-1">{currentEmployee}</span>
         </div>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-red-200 text-red-900 rounded-lg font-medium hover:bg-red-300 transition-colors text-sm"
+          className="px-4 py-2 bg-parchment-200 text-espresso-800 rounded-lg font-bold tracking-wide hover:bg-parchment-300 transition-colors text-xs uppercase"
         >
           Se déconnecter
         </button>
       </div>
 
-      <div className="text-center mb-8">
-        <Search className="h-12 w-12 text-gray-900 mx-auto mb-4" />
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
+          <Search className="h-8 w-8 text-parchment-100" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
           Recherche Adjoint
         </h1>
-        <p className="text-sm md:text-base text-gray-800">
-          Entrez le code à 4 caractères pour vérifier le statut d'une commande
+        <p className="text-lg text-espresso-600 font-medium">
+          Entrez le code à 4 caractères pour mettre à jour une commande.
         </p>
       </div>
 
-      {/* Search Form */}
-      <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8">
+      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-8 md:p-10 mb-8">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <input
               type="text"
               value={searchCode}
@@ -247,156 +248,175 @@ function EmployeeSearch() {
                 const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
                 setSearchCode(value)
               }}
-              placeholder="Code format: AB12"
-              className="w-full px-4 py-3 text-2xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all tracking-wider font-mono uppercase"
+              placeholder="Ex: AB12"
+              className="w-full px-4 py-4 text-3xl text-center border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors tracking-[0.2em] font-mono uppercase bg-parchment-50 text-espresso-900 font-bold placeholder-parchment-300"
               maxLength={4}
             />
           </div>
           <button
             type="submit"
             disabled={searchCode.length !== 4 || isSearching}
-            className="px-6 py-3 bg-blue-800 text-white rounded-lg font-semibold hover:bg-blue-900 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base w-full sm:w-auto"
+            className="px-8 py-4 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base w-full sm:w-auto shadow-md"
           >
             {isSearching ? 'Recherche...' : 'Rechercher'}
           </button>
         </form>
       </div>
 
-      {/* Not Found Message */}
       {notFound && (
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 text-center">
-          <Search className="h-12 w-12 text-gray-900 mx-auto mb-4" />
-          <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">
-            Code non trouvé
+        <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-10 text-center">
+          <Search className="h-12 w-12 text-terracotta-500 mx-auto mb-4 opacity-50" />
+          <h3 className="text-2xl font-heading font-bold text-espresso-900 mb-2">
+            Code introuvable
           </h3>
-          <p className="text-sm md:text-base text-gray-800">
-            Aucune commande trouvée avec ce code. Vérifiez le code et réessayez.
+          <p className="text-espresso-600">
+            Aucune commande ne correspond à ce code. Vérifiez la saisie.
           </p>
         </div>
       )}
 
-      {/* Book List Details */}
       {bookList && (
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <Package className="h-8 w-8 text-gray-900" />
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-              Commande #{bookList.code}
-            </h2>
+        <div className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
+          <div className="bg-parchment-200 border-b border-parchment-300 px-8 py-6 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Package className="h-6 w-6 text-amber-700" />
+              <h2 className="text-2xl font-heading font-bold text-espresso-900">
+                Commande <span className="font-mono tracking-wider ml-1">#{bookList.code}</span>
+              </h2>
+            </div>
+            <div className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest border ${
+              bookList.liste_prete ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'
+            }`}>
+              {bookList.liste_prete ? 'Prête' : 'En attente'}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="space-y-4">
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-10">
               <div>
-                <span className="text-sm font-semibold text-gray-700">Nom:</span>
-                <p className="text-lg text-gray-900">{bookList.nom}</p>
+                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Client</span>
+                <p className="text-lg font-bold text-espresso-900">{bookList.nom}</p>
               </div>
               <div>
-                <span className="text-sm font-semibold text-gray-700">École:</span>
-                <p className="text-lg text-gray-900">{bookList.ecole}</p>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-700">Niveau:</span>
-                <p className="text-lg text-gray-900">{bookList.niveau}</p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm font-semibold text-gray-700">Email:</span>
-                <p className="text-lg text-gray-900">{bookList.email}</p>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-700">Téléphone:</span>
-                <p className="text-lg text-gray-900">{bookList.telephone}</p>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-700">Date de commande:</span>
-                <p className="text-lg text-gray-900">
+                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Date</span>
+                <p className="text-lg font-medium text-espresso-900">
                   {new Date(bookList.created_at).toLocaleDateString('fr-FR')}
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Status Update Form */}
-          <div className="border-t border-gray-200 pt-8">
-            <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-6">
-              Mettre à jour le statut
-            </h3>
-
-            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-4">
-                  Liste prête:
-                </label>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                  <button
-                    onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: true }))}
-                    className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      updateForm.liste_prete
-                        ? 'bg-green-700 text-white shadow-md'
-                        : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                    }`}
-                  >
-                    <Check className="h-5 w-5" />
-                    <span>Oui</span>
-                  </button>
-                  <button
-                    onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: false }))}
-                    className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      !updateForm.liste_prete
-                        ? 'bg-red-700 text-white shadow-md'
-                        : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                    }`}
-                  >
-                    <X className="h-5 w-5" />
-                    <span>Non</span>
-                  </button>
-                </div>
+                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">École</span>
+                <p className="text-lg font-medium text-espresso-900">{bookList.ecole}</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="rangee" className="block text-sm font-semibold text-gray-900 mb-2">
-                    Rangée:
-                  </label>
-                  <select
-                    id="rangee"
-                    value={updateForm.rangee}
-                    onChange={(e) => setUpdateForm(prev => ({ ...prev, rangee: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  >
-                    <option value="">Sélectionner</option>
-                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(letter => (
-                      <option key={letter} value={letter}>{letter}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="niveau_rangement" className="block text-sm font-semibold text-gray-900 mb-2">
-                    Niveau:
-                  </label>
-                  <select
-                    id="niveau_rangement"
-                    value={updateForm.niveau_rangement}
-                    onChange={(e) => setUpdateForm(prev => ({ ...prev, niveau_rangement: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  >
-                    {[1, 2, 3, 4, 5, 6].map(num => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Niveau</span>
+                <p className="text-lg font-medium text-espresso-900">{bookList.niveau}</p>
               </div>
+              {(bookList.email || bookList.telephone) && (
+                <div className="md:col-span-2 border-t border-parchment-200 pt-4 mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bookList.email && (
+                      <div>
+                        <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Email</span>
+                        <p className="text-base text-espresso-800">{bookList.email}</p>
+                      </div>
+                    )}
+                    {bookList.telephone && (
+                      <div>
+                        <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Téléphone</span>
+                        <p className="text-base text-espresso-800">{bookList.telephone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
-              <button
-                onClick={handleUpdate}
-                disabled={isUpdating}
-                className="w-full bg-blue-800 text-white py-3 md:py-4 px-6 rounded-lg font-semibold hover:bg-blue-900 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-              >
-                {isUpdating ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
+            <div className="bg-parchment-50 rounded-2xl p-6 border border-parchment-200">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-800 mb-6 flex items-center border-b border-parchment-200 pb-3">
+                <Check className="h-4 w-4 mr-2 text-amber-600" />
+                Mise à jour du statut
+              </h3>
+
+              <div className="space-y-8">
+                <div>
+                  <label className="block text-sm font-bold text-espresso-800 mb-3">
+                    La liste est-elle prête ?
+                  </label>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: true }))}
+                      className={`flex-1 flex items-center justify-center space-x-2 py-4 rounded-xl font-bold uppercase tracking-wide transition-all border-2 ${
+                        updateForm.liste_prete
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-md'
+                          : 'bg-white text-espresso-600 border-parchment-300 hover:border-amber-400'
+                      }`}
+                    >
+                      <Check className="h-5 w-5" />
+                      <span>Oui, prête</span>
+                    </button>
+                    <button
+                      onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: false }))}
+                      className={`flex-1 flex items-center justify-center space-x-2 py-4 rounded-xl font-bold uppercase tracking-wide transition-all border-2 ${
+                        !updateForm.liste_prete
+                          ? 'bg-espresso-800 text-white border-espresso-800 shadow-md'
+                          : 'bg-white text-espresso-600 border-parchment-300 hover:border-espresso-400'
+                      }`}
+                    >
+                      <Clock className="h-5 w-5" />
+                      <span>En attente</span>
+                    </button>
+                  </div>
+                </div>
+
+                {updateForm.liste_prete && (
+                  <div className="grid grid-cols-2 gap-6 p-5 bg-white rounded-xl border border-parchment-200 shadow-sm">
+                    <div>
+                      <label htmlFor="rangee" className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                        Rangée
+                      </label>
+                      <select
+                        id="rangee"
+                        value={updateForm.rangee}
+                        onChange={(e) => setUpdateForm(prev => ({ ...prev, rangee: e.target.value }))}
+                        className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-bold"
+                      >
+                        <option value="">-</option>
+                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(letter => (
+                          <option key={letter} value={letter}>{letter}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="niveau_rangement" className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                        Étagère
+                      </label>
+                      <select
+                        id="niveau_rangement"
+                        value={updateForm.niveau_rangement}
+                        onChange={(e) => setUpdateForm(prev => ({ ...prev, niveau_rangement: e.target.value }))}
+                        className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-bold"
+                      >
+                        {[1, 2, 3, 4, 5, 6].map(num => (
+                          <option key={num} value={num}>{num}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleUpdate}
+                  disabled={isUpdating}
+                  className="w-full bg-espresso-900 text-white py-4 px-6 rounded-xl font-bold uppercase tracking-wider hover:bg-espresso-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center space-x-2"
+                >
+                  {isUpdating ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <span>Mettre à jour le statut</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -13,10 +13,6 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  const handleBackToHome = () => {
-    window.location.reload()
-  }
-
   useEffect(() => {
     loadEcoles()
   }, [])
@@ -55,7 +51,7 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
 
       setMessage({ type: 'success', text: 'École ajoutée avec succès!' })
       setNewEcole('')
-      loadEcoles() // Reload the list
+      loadEcoles()
     } catch (error) {
       console.error('Error adding école:', error)
       setMessage({ type: 'error', text: 'Erreur lors de l\'ajout de l\'école' })
@@ -76,14 +72,13 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
       if (error) throw error
 
       setMessage({ type: 'success', text: 'École supprimée avec succès!' })
-      loadEcoles() // Reload the list
+      loadEcoles()
     } catch (error) {
       console.error('Error deleting école:', error)
       setMessage({ type: 'error', text: 'Erreur lors de la suppression de l\'école' })
     }
   }
 
-  // Clear message after 3 seconds
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(null), 3000)
@@ -93,53 +88,49 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-espresso-900"></div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto px-4 pb-12">
+      <div className="mb-8">
         <button
           onClick={() => onNavigate('espace-client')}
-          className="px-4 py-2 bg-blue-200 text-blue-900 rounded-lg font-medium hover:bg-blue-300 transition-colors"
+          className="px-5 py-2 bg-white border border-parchment-300 text-espresso-800 rounded-full font-semibold hover:bg-parchment-200 hover:text-espresso-900 transition-all shadow-sm text-sm uppercase tracking-wide"
         >
-          Retour à l'Espace Client
+          ← Retour à l'Espace Client
         </button>
       </div>
 
-      <div className="text-center mb-8">
-        <School className="h-12 w-12 text-gray-900 mx-auto mb-4" />
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
+          <School className="h-8 w-8 text-parchment-100" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
           Gestion des Écoles
         </h1>
-        <p className="text-sm md:text-base text-gray-800">
-          Ajoutez ou supprimez des écoles de la liste
+        <p className="text-lg text-espresso-600 font-medium">
+          Ajoutez ou supprimez des écoles de la base de données.
         </p>
       </div>
 
-      {/* Message */}
       {message && (
-        <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
+        <div className={`mb-8 p-4 rounded-xl flex items-center justify-center space-x-3 text-sm font-bold uppercase tracking-widest border shadow-sm ${
           message.type === 'success' 
-            ? 'bg-green-100 border border-green-300 text-green-900' 
-            : 'bg-red-100 border border-red-300 text-red-900'
+            ? 'bg-green-50 border-green-200 text-green-700' 
+            : 'bg-terracotta-50 border-terracotta-200 text-terracotta-700'
         }`}>
-          {message.type === 'success' ? (
-            <Check className="h-5 w-5" />
-          ) : (
-            <X className="h-5 w-5" />
-          )}
+          {message.type === 'success' ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
           <span>{message.text}</span>
         </div>
       )}
 
-      {/* Add New École Form */}
-      <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 mb-8 border-2 border-gray-300">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-6">
-          Ajouter une nouvelle école
+      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-8 mb-10">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-espresso-500 mb-6">
+          Ajouter une école
         </h2>
         
         <form onSubmit={handleAddEcole} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -148,15 +139,15 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
               type="text"
               value={newEcole}
               onChange={(e) => setNewEcole(e.target.value)}
-              placeholder="Nom de l'école"
-              className="w-full px-4 py-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
+              placeholder="Nom de la nouvelle école"
+              className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
               required
             />
           </div>
           <button
             type="submit"
             disabled={isAdding || !newEcole.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-lg font-semibold hover:from-blue-900 hover:to-indigo-900 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg text-sm md:text-base w-full sm:w-auto"
+            className="px-8 py-3.5 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md text-sm sm:w-auto"
           >
             <Plus className="h-5 w-5" />
             <span>{isAdding ? 'Ajout...' : 'Ajouter'}</span>
@@ -164,30 +155,29 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
         </form>
       </div>
 
-      {/* École List */}
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-300">
-        <div className="px-4 md:px-6 py-4 border-b border-gray-300 bg-gradient-to-r from-gray-50 to-blue-50">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
+        <div className="bg-parchment-100 border-b border-parchment-200 px-8 py-5">
+          <h2 className="text-lg font-heading font-bold text-espresso-900">
             Liste des Écoles ({ecoles.length})
           </h2>
         </div>
 
         {ecoles.length === 0 ? (
-          <div className="p-6 md:p-8 text-center">
-            <School className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-base md:text-lg text-gray-800">Aucune école trouvée</p>
+          <div className="p-12 text-center">
+            <School className="h-12 w-12 text-parchment-400 mx-auto mb-4" />
+            <p className="text-espresso-600 font-medium text-lg">Aucune école trouvée</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-parchment-100">
             {ecoles.map((ecole) => (
-              <div key={ecole} className="px-4 md:px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <span className="text-gray-900 font-medium text-sm md:text-base pr-4">{ecole}</span>
+              <div key={ecole} className="px-8 py-5 flex items-center justify-between hover:bg-parchment-50 transition-colors">
+                <span className="text-espresso-900 font-bold text-lg">{ecole}</span>
                 <button
                   onClick={() => handleDeleteEcole(ecole)}
-                  className="p-2 text-red-700 hover:bg-red-100 rounded-lg transition-colors shadow-sm flex-shrink-0"
+                  className="p-2.5 text-terracotta-500 hover:text-white hover:bg-terracotta-500 rounded-lg transition-colors border border-transparent hover:border-terracotta-600"
                   title="Supprimer cette école"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-5 w-5" />
                 </button>
               </div>
             ))}

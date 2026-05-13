@@ -1,6 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-parchment-100 text-espresso-900 font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
 
 @media print {
   @page {
@@ -30,11 +42,10 @@
     box-sizing: border-box;
   }
   
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
   }
   
-  /* Hide any links or URLs that might appear in print */
   a[href*="bolt.new"],
   a[href*="bolt"],
   [href*="bolt.new"],
@@ -58,7 +69,6 @@
     top: -9999px !important;
   }
   
-  /* Hide any footer or bottom elements that might contain links */
   footer,
   .footer,
   [class*="footer"],
@@ -77,7 +87,6 @@
     left: -9999px !important;
   }
   
-  /* Force hide any remaining elements that might contain links */
   body::after,
   body::before,
   html::after,
@@ -86,13 +95,11 @@
     content: none !important;
   }
   
-  /* Hide any generated content or pseudo elements */
   *::after,
   *::before {
     content: none !important;
   }
   
-  /* Force all text to be pure black for thermal printer */
   #print-section,
   #print-section *,
   #print-section h1,
@@ -106,7 +113,6 @@
     print-color-adjust: exact !important;
   }
   
-  /* Ensure borders and backgrounds are also strong */
   #print-section .border-gray-300,
   #print-section .border-gray-400 {
     border-color: #000000 !important;
