@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CreditCard as Edit, Search, Check, Clock, Save, X, Plus, Trash2, Printer } from 'lucide-react'
+import { CreditCard as Edit, Search, Plus, Trash2, Printer } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 
 interface CorrectionProps {
@@ -32,8 +32,64 @@ interface EditFormData {
   couverture_demandee: boolean
 }
 
+function buildReceiptHTML(order: GroupedOrder): string {
+  const date = new Date(order.created_at).toLocaleString('fr-FR')
+  const childrenRows = order.children
+    .map(
+      (child, i) => `
+        <div style="margin-bottom:5px;">
+          <div style="font-weight:bold;">Enfant ${i + 1} &mdash; Code: ${child.code}</div>
+          <div>&#201;cole: ${child.ecole}</div>
+          <div>Niveau: ${child.niveau}${child.genre ? ` (${child.genre})` : ''}</div>
+        </div>`
+    )
+    .join('')
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Re&ccedil;u &mdash; ${order.nom}</title>
+  <style>
+    @page { size: 58mm auto; margin: 1.5mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: monospace;
+      font-size: 8px;
+      line-height: 1.4;
+      color: #000;
+      width: 53mm;
+      padding: 2mm;
+    }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .title { font-size: 10px; font-weight: bold; text-align: center; margin-bottom: 4px; }
+    .subtitle { text-align: center; margin-bottom: 6px; }
+    .divider { border-top: 1px dashed #000; margin: 4px 0; }
+    .row { margin-bottom: 2px; }
+    .footer { text-align: center; font-size: 7px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="title">LIBRAIRIE 2B</div>
+  <div class="subtitle">Re&ccedil;u de commande</div>
+  <div class="divider"></div>
+  <div class="row"><span class="bold">Client:</span> ${order.nom}</div>
+  ${order.telephone ? `<div class="row"><span class="bold">T&eacute;l:</span> ${order.telephone}</div>` : ''}
+  ${order.email ? `<div class="row"><span class="bold">Email:</span> ${order.email}</div>` : ''}
+  <div class="row"><span class="bold">Date:</span> ${date}</div>
+  ${order.avance ? `<div class="row"><span class="bold">Avance:</span> ${order.avance} DHS</div>` : ''}
+  ${order.couverture_demandee ? `<div class="row"><span class="bold">Couverture:</span> Oui</div>` : ''}
+  <div class="divider"></div>
+  ${childrenRows}
+  ${order.note ? `<div class="divider"></div><div class="row"><span class="bold">Note:</span> ${order.note}</div>` : ''}
+  <div class="divider"></div>
+  <div class="footer">Merci de votre confiance</div>
+</body>
+</html>`
+}
+
 function Correction({ onNavigate }: CorrectionProps) {
-  const [bookLists, setBookLists] = useState<Student[]>([])
   const [groupedOrders, setGroupedOrders] = useState<GroupedOrder[]>([])
   const [filteredGroupedOrders, setFilteredGroupedOrders] = useState<GroupedOrder[]>([])
   const [searchCode, setSearchCode] = useState('')
@@ -42,69 +98,93 @@ function Correction({ onNavigate }: CorrectionProps) {
   const [editingOrder, setEditingOrder] = useState<GroupedOrder | null>(null)
   const [editForm, setEditForm] = useState<EditFormData | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [ecoles, setEcoles] = useState<string[]>([])
-  const [showEcoleDropdown, setShowEcoleDropdown] = useState(false)
-  const [activeChildIndex, setActiveChildIndex] = useState<number | null>(null)
-  const [filteredEcoles, setFilteredEcoles] = useState<string[]>([])
   const [deletingOrder, setDeletingOrder] = useState<GroupedOrder | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [printingOrder, setPrintingOrder] = useState<GroupedOrder | null>(null)
 
   const loadRecentOrders = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase.from('students').select('*').order('created_at', { ascending: false }).limit(50)
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
       if (error) throw error
-      setBookLists(data || [])
       groupOrdersByCustomer(data || [])
-    } catch (error) {
-      console.error('Error loading recent orders:', error)
+    } catch (err) {
+      console.error('Erreur lors du chargement des commandes:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const loadEcoles = async () => {
-    try {
-      const { data, error } = await supabase.from('ecoles').select('nom_ecole').order('nom_ecole', { ascending: true })
-      if (error) throw error
-      const ecoleNames = data?.map(item => item.nom_ecole).filter(Boolean) || []
-      setEcoles(ecoleNames)
-      setFilteredEcoles(ecoleNames)
-    } catch (error) {
-      console.error('Error loading écoles:', error)
-    }
-  }
-
   const groupOrdersByCustomer = (orders: Student[]) => {
-    const grouped: { [key: string]: GroupedOrder } = {}
-    orders.forEach(order => {
+    const grouped: Record<string, GroupedOrder> = {}
+    for (const order of orders) {
       const key = `${order.nom}-${order.email}-${order.telephone}`
       if (!grouped[key]) {
-        grouped[key] = { nom: order.nom, email: order.email, telephone: order.telephone, avance: order.avance, note: order.note, couverture_demandee: order.couverture_demandee, created_at: order.created_at, children: [] }
+        grouped[key] = {
+          nom: order.nom,
+          email: order.email,
+          telephone: order.telephone,
+          avance: order.avance,
+          note: order.note,
+          couverture_demandee: order.couverture_demandee,
+          created_at: order.created_at,
+          children: [],
+        }
       }
       grouped[key].children.push(order)
-      if (new Date(order.created_at) < new Date(grouped[key].created_at)) grouped[key].created_at = order.created_at
-    })
-    const groupedArray = Object.values(grouped).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    setGroupedOrders(groupedArray)
+      if (new Date(order.created_at) < new Date(grouped[key].created_at)) {
+        grouped[key].created_at = order.created_at
+      }
+    }
+    const sorted = Object.values(grouped).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    setGroupedOrders(sorted)
   }
 
   useEffect(() => {
     let filtered = groupedOrders
-    if (searchCode) filtered = filtered.filter(g => g.children.some(c => c.code.toLowerCase().includes(searchCode.toLowerCase())))
-    if (searchName) filtered = filtered.filter(g => g.nom.toLowerCase().includes(searchName.toLowerCase()))
+    if (searchCode) {
+      filtered = filtered.filter(g =>
+        g.children.some(c => c.code.toLowerCase().includes(searchCode.toLowerCase()))
+      )
+    }
+    if (searchName) {
+      filtered = filtered.filter(g =>
+        g.nom.toLowerCase().includes(searchName.toLowerCase())
+      )
+    }
     setFilteredGroupedOrders(filtered)
   }, [groupedOrders, searchCode, searchName])
 
   useEffect(() => {
-    loadEcoles()
-    const subscription = supabase.channel('recent_orders').on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => { loadRecentOrders() }).subscribe()
-    const refreshInterval = setInterval(() => { loadRecentOrders() }, 180000)
-    return () => { subscription.unsubscribe(); clearInterval(refreshInterval) }
+    loadRecentOrders()
+    const subscription = supabase
+      .channel('correction_orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, loadRecentOrders)
+      .subscribe()
+    const refreshInterval = setInterval(loadRecentOrders, 180_000)
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(refreshInterval)
+    }
   }, [])
 
-  useEffect(() => { loadRecentOrders() }, [])
+  const handlePrintOrder = (order: GroupedOrder) => {
+    const printWindow = window.open('', '_blank', 'width=300,height=500')
+    if (!printWindow) {
+      alert('Veuillez autoriser les pop-ups pour imprimer.')
+      return
+    }
+    printWindow.document.write(buildReceiptHTML(order))
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
+  }
 
   const handleDeleteOrder = async () => {
     if (!deletingOrder) return
@@ -114,122 +194,220 @@ function Correction({ onNavigate }: CorrectionProps) {
       await Promise.all(ids.map(id => supabase.from('students').delete().eq('id', id)))
       await loadRecentOrders()
       setDeletingOrder(null)
-    } catch (error) {
-      alert('Erreur lors de la suppression')
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err)
+      alert('Erreur lors de la suppression. Veuillez réessayer.')
     } finally {
       setIsDeleting(false)
     }
-  }
-
-  const handlePrintOrder = (order: GroupedOrder) => {
-    setPrintingOrder(order)
-    setTimeout(() => {
-      window.print()
-      setPrintingOrder(null)
-    }, 100)
   }
 
   const handleEditOrder = (order: GroupedOrder) => {
     setEditingOrder(order)
     setEditForm({
       nom: order.nom,
-      children: order.children.map(c => ({ id: c.id, ecole: c.ecole, niveau: c.niveau, genre: c.genre || '' })),
+      children: order.children.map(c => ({
+        id: c.id,
+        ecole: c.ecole,
+        niveau: c.niveau,
+        genre: c.genre || '',
+      })),
       email: order.email,
       telephone: order.telephone,
       avance: order.avance?.toString() || '',
       note: order.note || '',
-      couverture_demandee: order.couverture_demandee
+      couverture_demandee: order.couverture_demandee,
     })
   }
 
   const handleCancelEdit = () => {
     setEditingOrder(null)
     setEditForm(null)
-    setShowEcoleDropdown(false)
-    setActiveChildIndex(null)
   }
 
   const generateCode = (): string => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const numbers = '0123456789'
-    return letters[Math.floor(Math.random() * letters.length)] + letters[Math.floor(Math.random() * letters.length)] + numbers[Math.floor(Math.random() * numbers.length)] + numbers[Math.floor(Math.random() * numbers.length)]
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const digits = '0123456789'
+    return (
+      letters[Math.floor(Math.random() * letters.length)] +
+      letters[Math.floor(Math.random() * letters.length)] +
+      digits[Math.floor(Math.random() * digits.length)] +
+      digits[Math.floor(Math.random() * digits.length)]
+    )
   }
 
   const handleSaveChanges = async () => {
     if (!editForm || !editingOrder) return
     setIsUpdating(true)
     try {
-      const updatePromises = editForm.children.filter(c => c.id).map(child => {
-        return supabase.from('students').update({
-          nom: editForm.nom.trim(), ecole: child.ecole.trim(), niveau: child.niveau.trim(), genre: child.genre || null,
-          email: editForm.email.trim(), telephone: editForm.telephone.trim(), avance: editForm.avance ? parseFloat(editForm.avance) : null,
-          note: editForm.note.trim(), couverture_demandee: editForm.couverture_demandee
-        }).eq('id', child.id)
-      })
+      const sharedFields = {
+        nom: editForm.nom.trim(),
+        email: editForm.email.trim(),
+        telephone: editForm.telephone.trim(),
+        avance: editForm.avance ? parseFloat(editForm.avance) : null,
+        note: editForm.note.trim(),
+        couverture_demandee: editForm.couverture_demandee,
+      }
 
-      const newChildren = editForm.children.filter(c => !c.id)
-      const insertPromises = newChildren.map(async (child) => {
-        let newCode = generateCode()
-        return supabase.from('students').insert([{
-          code: newCode, nom: editForm.nom.trim(), ecole: child.ecole.trim(), niveau: child.niveau.trim(), genre: child.genre || null,
-          email: editForm.email.trim(), telephone: editForm.telephone.trim(), avance: editForm.avance ? parseFloat(editForm.avance) : null,
-          note: editForm.note.trim(), couverture_demandee: editForm.couverture_demandee
-        }])
-      })
+      const updatePromises = editForm.children
+        .filter(c => c.id)
+        .map(child =>
+          supabase
+            .from('students')
+            .update({ ...sharedFields, ecole: child.ecole.trim(), niveau: child.niveau.trim(), genre: child.genre || null })
+            .eq('id', child.id)
+        )
 
-      const removedChildren = editingOrder.children.filter(orig => !editForm.children.some(f => f.id === orig.id))
-      const deletePromises = removedChildren.map(child => supabase.from('students').delete().eq('id', child.id))
+      const insertPromises = editForm.children
+        .filter(c => !c.id)
+        .map(child =>
+          supabase.from('students').insert([{
+            code: generateCode(),
+            ...sharedFields,
+            ecole: child.ecole.trim(),
+            niveau: child.niveau.trim(),
+            genre: child.genre || null,
+          }])
+        )
+
+      const removedChildren = editingOrder.children.filter(
+        orig => !editForm.children.some(f => f.id === orig.id)
+      )
+      const deletePromises = removedChildren.map(child =>
+        supabase.from('students').delete().eq('id', child.id)
+      )
 
       await Promise.all([...updatePromises, ...insertPromises, ...deletePromises])
       await loadRecentOrders()
       handleCancelEdit()
-    } catch (error) {
-      alert('Erreur lors de la mise à jour')
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour:', err)
+      alert('Erreur lors de la mise à jour. Veuillez réessayer.')
     } finally {
       setIsUpdating(false)
     }
   }
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-espresso-900"></div></div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-espresso-900" />
+      </div>
+    )
+  }
 
   if (editingOrder && editForm) {
     return (
       <div className="max-w-4xl mx-auto px-4 pb-12">
         <div className="mb-8 flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-parchment-300">
-          <button onClick={handleCancelEdit} className="px-5 py-2 bg-parchment-200 text-espresso-800 rounded-xl font-bold tracking-wide hover:bg-parchment-300 transition-colors uppercase text-xs">← Annuler</button>
-          <h1 className="text-xl font-heading font-bold text-espresso-900">Modifier : {editingOrder.nom}</h1>
+          <button
+            onClick={handleCancelEdit}
+            className="px-5 py-2 bg-parchment-200 text-espresso-800 rounded-xl font-bold tracking-wide hover:bg-parchment-300 transition-colors uppercase text-xs"
+          >
+            ← Annuler
+          </button>
+          <h1 className="text-xl font-heading font-bold text-espresso-900">
+            Modifier : {editingOrder.nom}
+          </h1>
         </div>
 
         <div className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
           <div className="p-8 space-y-8">
             <div>
-              <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Nom de l'élève ou parent *</label>
-              <input type="text" required value={editForm.nom} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50" />
+              <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                Nom de l'élève ou parent *
+              </label>
+              <input
+                type="text"
+                required
+                value={editForm.nom}
+                onChange={e => setEditForm({ ...editForm, nom: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50"
+              />
             </div>
 
             <div>
               <div className="flex items-center justify-between border-b border-parchment-200 pb-3 mb-4">
-                <label className="text-sm font-bold text-espresso-800 uppercase tracking-widest">Enfant(s)</label>
-                <button type="button" onClick={() => setEditForm({ ...editForm, children: [...editForm.children, { id: '', ecole: '', niveau: '', genre: '' }] })} className="text-amber-700 hover:text-amber-800 font-bold text-sm flex items-center"><Plus className="w-4 h-4 mr-1" /> Ajouter</button>
+                <label className="text-sm font-bold text-espresso-800 uppercase tracking-widest">
+                  Enfant(s)
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditForm({
+                      ...editForm,
+                      children: [...editForm.children, { id: '', ecole: '', niveau: '', genre: '' }],
+                    })
+                  }
+                  className="text-amber-700 hover:text-amber-800 font-bold text-sm flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" /> Ajouter
+                </button>
               </div>
-              
+
               <div className="space-y-4">
                 {editForm.children.map((child, index) => (
-                  <div key={index} className="p-5 rounded-2xl bg-parchment-100 border border-parchment-200 relative">
-                    {editForm.children.length > 1 && <button onClick={() => setEditForm({...editForm, children: editForm.children.filter((_, i) => i !== index)})} className="absolute top-4 right-4 text-terracotta-500 hover:text-terracotta-700"><Trash2 className="w-4 h-4" /></button>}
-                    <h4 className="text-sm font-bold text-espresso-900 mb-4 uppercase tracking-widest">Enfant {index + 1}</h4>
+                  <div
+                    key={index}
+                    className="p-5 rounded-2xl bg-parchment-100 border border-parchment-200 relative"
+                  >
+                    {editForm.children.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setEditForm({
+                            ...editForm,
+                            children: editForm.children.filter((_, i) => i !== index),
+                          })
+                        }
+                        className="absolute top-4 right-4 text-terracotta-500 hover:text-terracotta-700"
+                        aria-label="Supprimer cet enfant"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <h4 className="text-sm font-bold text-espresso-900 mb-4 uppercase tracking-widest">
+                      Enfant {index + 1}
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">École *</label>
-                        <input type="text" value={child.ecole} onChange={e => {
-                          const val = e.target.value;
-                          setEditForm({...editForm, children: editForm.children.map((c, i) => i === index ? {...c, ecole: val} : c)})
-                        }} className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white" />
+                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                          École *
+                        </label>
+                        <input
+                          type="text"
+                          value={child.ecole}
+                          onChange={e => {
+                            const val = e.target.value
+                            setEditForm({
+                              ...editForm,
+                              children: editForm.children.map((c, i) =>
+                                i === index ? { ...c, ecole: val } : c
+                              ),
+                            })
+                          }}
+                          className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white"
+                        />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Niveau *</label>
-                        <select value={child.niveau} onChange={e => setEditForm({...editForm, children: editForm.children.map((c, i) => i === index ? {...c, niveau: e.target.value} : c)})} className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white">
+                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                          Niveau *
+                        </label>
+                        <select
+                          value={child.niveau}
+                          onChange={e =>
+                            setEditForm({
+                              ...editForm,
+                              children: editForm.children.map((c, i) =>
+                                i === index ? { ...c, niveau: e.target.value } : c
+                              ),
+                            })
+                          }
+                          className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white"
+                        >
                           <option value="">Sélectionner</option>
-                          {['PS','MS','GS','CP','CE1','CE2','CM1','CM2','CE6','CE7','CE8','CE9','TC','1BAC','2BAC'].map(n => <option key={n} value={n}>{n}</option>)}
+                          {['PS','MS','GS','CP','CE1','CE2','CM1','CM2','CE6','CE7','CE8','CE9','TC','1BAC','2BAC'].map(n => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -239,8 +417,12 @@ function Correction({ onNavigate }: CorrectionProps) {
             </div>
 
             <div className="pt-6 border-t border-parchment-200">
-              <button onClick={handleSaveChanges} disabled={isUpdating} className="w-full bg-amber-600 text-white py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 disabled:opacity-50 shadow-md">
-                {isUpdating ? '...' : 'Sauvegarder les modifications'}
+              <button
+                onClick={handleSaveChanges}
+                disabled={isUpdating}
+                className="w-full bg-amber-600 text-white py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 disabled:opacity-50 shadow-md transition-colors"
+              >
+                {isUpdating ? 'Sauvegarde en cours...' : 'Sauvegarder les modifications'}
               </button>
             </div>
           </div>
@@ -251,121 +433,193 @@ function Correction({ onNavigate }: CorrectionProps) {
 
   return (
     <>
-    <div className="max-w-5xl mx-auto px-4 pb-12">
-      <div className="mb-8">
-        <button onClick={() => onNavigate('espace-client')} className="px-5 py-2 bg-white border border-parchment-300 text-espresso-800 rounded-full font-semibold hover:bg-parchment-200 transition-all shadow-sm text-sm uppercase tracking-wide">
-          ← Retour à l'Espace Client
-        </button>
-      </div>
-
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
-          <Edit className="h-8 w-8 text-parchment-100" />
+      <div className="max-w-5xl mx-auto px-4 pb-12">
+        <div className="mb-8">
+          <button
+            onClick={() => onNavigate('espace-client')}
+            className="px-5 py-2 bg-white border border-parchment-300 text-espresso-800 rounded-full font-semibold hover:bg-parchment-200 transition-all shadow-sm text-sm uppercase tracking-wide"
+          >
+            ← Retour à l'Espace Client
+          </button>
         </div>
-        <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">Correction</h1>
-        <p className="text-lg text-espresso-600 font-medium">Consultez et modifiez les 50 dernières commandes.</p>
-      </div>
 
-      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-8 mb-10">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-espresso-400" />
-            <input type="text" value={searchCode} onChange={(e) => setSearchCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} placeholder="Code (EX: AB12)" className="w-full pl-12 pr-4 py-4 border-2 border-parchment-300 rounded-xl focus:border-amber-500 font-mono font-bold text-lg uppercase bg-parchment-50 text-espresso-900" maxLength={4} />
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
+            <Edit className="h-8 w-8 text-parchment-100" />
           </div>
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-espresso-400" />
-            <input type="text" value={searchName} onChange={(e) => setSearchName(e.target.value)} placeholder="Nom du client" className="w-full pl-12 pr-4 py-4 border-2 border-parchment-300 rounded-xl focus:border-amber-500 font-medium text-lg bg-parchment-50 text-espresso-900" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
+            Correction
+          </h1>
+          <p className="text-lg text-espresso-600 font-medium">
+            Consultez et modifiez les 50 dernières commandes.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-8 mb-10">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-espresso-400" />
+              <input
+                type="text"
+                value={searchCode}
+                onChange={e =>
+                  setSearchCode(
+                    e.target.value
+                      .toUpperCase()
+                      .replace(/[^A-Z0-9]/g, '')
+                      .slice(0, 4)
+                  )
+                }
+                placeholder="Code (EX: AB12)"
+                maxLength={4}
+                className="w-full pl-12 pr-4 py-4 border-2 border-parchment-300 rounded-xl focus:border-amber-500 font-mono font-bold text-lg uppercase bg-parchment-50 text-espresso-900"
+              />
+            </div>
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-espresso-400" />
+              <input
+                type="text"
+                value={searchName}
+                onChange={e => setSearchName(e.target.value)}
+                placeholder="Nom du client"
+                className="w-full pl-12 pr-4 py-4 border-2 border-parchment-300 rounded-xl focus:border-amber-500 font-medium text-lg bg-parchment-50 text-espresso-900"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-6">
-        {filteredGroupedOrders.length === 0 ? (
-           <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-12 text-center text-espresso-600 font-medium">Aucune commande trouvée.</div>
-        ) : (
-          filteredGroupedOrders.map(group => (
-            <div key={group.created_at} className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
-              <div className="bg-parchment-100 border-b border-parchment-200 px-8 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <h3 className="text-xl font-bold text-espresso-900 mb-1">{group.nom}</h3>
-                  <span className="text-sm font-medium text-espresso-600">{new Date(group.created_at).toLocaleString('fr-FR')}</span>
+        <div className="space-y-6">
+          {filteredGroupedOrders.length === 0 ? (
+            <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-12 text-center text-espresso-600 font-medium">
+              Aucune commande trouvée.
+            </div>
+          ) : (
+            filteredGroupedOrders.map(group => (
+              <div
+                key={`${group.nom}-${group.created_at}`}
+                className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden"
+              >
+                <div className="bg-parchment-100 border-b border-parchment-200 px-8 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-espresso-900 mb-1">{group.nom}</h3>
+                    <span className="text-sm font-medium text-espresso-600">
+                      {new Date(group.created_at).toLocaleString('fr-FR')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => handlePrintOrder(group)}
+                      className="px-4 py-2 bg-espresso-900 text-parchment-100 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-espresso-950 shadow-md flex items-center gap-2 transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Imprimer
+                    </button>
+                    <button
+                      onClick={() => handleEditOrder(group)}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-amber-700 shadow-md transition-colors"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => setDeletingOrder(group)}
+                      className="px-4 py-2 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-terracotta-600 shadow-md flex items-center gap-2 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => handlePrintOrder(group)} className="px-4 py-2 bg-espresso-900 text-parchment-100 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-espresso-950 shadow-md flex items-center gap-2"><Printer className="w-4 h-4" /> Imprimer</button>
-                  <button onClick={() => handleEditOrder(group)} className="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-amber-700 shadow-md">Modifier</button>
-                  <button onClick={() => setDeletingOrder(group)} className="px-4 py-2 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-terracotta-600 shadow-md flex items-center gap-2"><Trash2 className="w-4 h-4" /> Supprimer</button>
-                </div>
-              </div>
-              <div className="p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  {group.telephone && <div className="text-sm"><span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Tél:</span><span className="font-medium">{group.telephone}</span></div>}
-                  {group.email && <div className="text-sm"><span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Email:</span><span className="font-medium">{group.email}</span></div>}
-                  {group.avance && <div className="text-sm"><span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Avance:</span><span className="font-bold text-green-700">{group.avance} DHS</span></div>}
-                </div>
-                <div className="space-y-3 border-t border-parchment-200 pt-6">
-                  {group.children.map(child => (
-                    <div key={child.id} className="flex justify-between items-center p-4 bg-parchment-50 rounded-xl border border-parchment-200">
-                      <div>
-                        <div className="font-bold text-espresso-900">{child.ecole}</div>
-                        <div className="text-sm text-espresso-600">{child.niveau} {child.genre ? `(${child.genre})` : ''}</div>
+
+                <div className="p-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    {group.telephone && (
+                      <div className="text-sm">
+                        <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Tél:</span>
+                        <span className="font-medium">{group.telephone}</span>
                       </div>
-                      <div className="font-mono font-bold text-lg text-amber-700 tracking-widest">{child.code}</div>
+                    )}
+                    {group.email && (
+                      <div className="text-sm">
+                        <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Email:</span>
+                        <span className="font-medium">{group.email}</span>
+                      </div>
+                    )}
+                    {group.avance != null && (
+                      <div className="text-sm">
+                        <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Avance:</span>
+                        <span className="font-bold text-green-700">{group.avance} DHS</span>
+                      </div>
+                    )}
+                    {group.couverture_demandee && (
+                      <div className="text-sm">
+                        <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Couverture:</span>
+                        <span className="font-medium">Oui</span>
+                      </div>
+                    )}
+                  </div>
+                  {group.note && (
+                    <div className="mb-4 text-sm">
+                      <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Note:</span>
+                      <span className="font-medium">{group.note}</span>
                     </div>
-                  ))}
+                  )}
+                  <div className="space-y-3 border-t border-parchment-200 pt-6">
+                    {group.children.map(child => (
+                      <div
+                        key={child.id}
+                        className="flex justify-between items-center p-4 bg-parchment-50 rounded-xl border border-parchment-200"
+                      >
+                        <div>
+                          <div className="font-bold text-espresso-900">{child.ecole}</div>
+                          <div className="text-sm text-espresso-600">
+                            {child.niveau} {child.genre ? `(${child.genre})` : ''}
+                          </div>
+                        </div>
+                        <div className="font-mono font-bold text-lg text-amber-700 tracking-widest">
+                          {child.code}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
-    </div>
 
-    {deletingOrder && (
-      <div className="fixed inset-0 bg-espresso-950/60 flex items-center justify-center z-50 px-4">
-        <div className="bg-white rounded-3xl shadow-book-hover border border-parchment-300 p-8 max-w-md w-full">
-          <h2 className="text-xl font-heading font-bold text-espresso-900 mb-3">Supprimer la commande ?</h2>
-          <p className="text-espresso-600 mb-2">Cette action est irréversible. La commande de <span className="font-bold text-espresso-900">{deletingOrder.nom}</span> et ses {deletingOrder.children.length} enfant(s) seront définitivement supprimés.</p>
-          <div className="flex gap-3 mt-6">
-            <button onClick={() => setDeletingOrder(null)} disabled={isDeleting} className="flex-1 px-5 py-3 bg-parchment-200 text-espresso-800 rounded-xl font-bold uppercase tracking-wide hover:bg-parchment-300 transition-colors text-sm">Annuler</button>
-            <button onClick={handleDeleteOrder} disabled={isDeleting} className="flex-1 px-5 py-3 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wide hover:bg-terracotta-600 transition-colors text-sm disabled:opacity-50">
-              {isDeleting ? 'Suppression...' : 'Confirmer la suppression'}
-            </button>
+      {deletingOrder && (
+        <div className="fixed inset-0 bg-espresso-950/60 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-3xl shadow-book-hover border border-parchment-300 p-8 max-w-md w-full">
+            <h2 className="text-xl font-heading font-bold text-espresso-900 mb-3">
+              Supprimer la commande ?
+            </h2>
+            <p className="text-espresso-600 mb-2">
+              Cette action est irréversible. La commande de{' '}
+              <span className="font-bold text-espresso-900">{deletingOrder.nom}</span> et{' '}
+              {deletingOrder.children.length === 1
+                ? 'son 1 enfant seront définitivement supprimés.'
+                : `ses ${deletingOrder.children.length} enfants seront définitivement supprimés.`}
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setDeletingOrder(null)}
+                disabled={isDeleting}
+                className="flex-1 px-5 py-3 bg-parchment-200 text-espresso-800 rounded-xl font-bold uppercase tracking-wide hover:bg-parchment-300 transition-colors text-sm disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteOrder}
+                disabled={isDeleting}
+                className="flex-1 px-5 py-3 bg-terracotta-500 text-white rounded-xl font-bold uppercase tracking-wide hover:bg-terracotta-600 transition-colors text-sm disabled:opacity-50"
+              >
+                {isDeleting ? 'Suppression...' : 'Confirmer'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-
-    {printingOrder && (
-      <div id="print-section" style={{ display: 'none' }}>
-        <div style={{ fontFamily: 'monospace', fontSize: '8px', lineHeight: '1.4' }}>
-          <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>LIBRAIRIE 2B</div>
-          <div style={{ textAlign: 'center', marginBottom: '6px' }}>Reçu de commande</div>
-          <div style={{ borderTop: '1px dashed #000', marginBottom: '4px' }} />
-          <div><span style={{ fontWeight: 'bold' }}>Client:</span> {printingOrder.nom}</div>
-          {printingOrder.telephone && <div><span style={{ fontWeight: 'bold' }}>Tél:</span> {printingOrder.telephone}</div>}
-          {printingOrder.email && <div><span style={{ fontWeight: 'bold' }}>Email:</span> {printingOrder.email}</div>}
-          <div><span style={{ fontWeight: 'bold' }}>Date:</span> {new Date(printingOrder.created_at).toLocaleString('fr-FR')}</div>
-          {printingOrder.avance && <div><span style={{ fontWeight: 'bold' }}>Avance:</span> {printingOrder.avance} DHS</div>}
-          {printingOrder.couverture_demandee && <div><span style={{ fontWeight: 'bold' }}>Couverture:</span> Oui</div>}
-          <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-          {printingOrder.children.map((child, i) => (
-            <div key={i} style={{ marginBottom: '4px' }}>
-              <div style={{ fontWeight: 'bold' }}>Enfant {i + 1} — Code: {child.code}</div>
-              <div>École: {child.ecole}</div>
-              <div>Niveau: {child.niveau}{child.genre ? ` (${child.genre})` : ''}</div>
-            </div>
-          ))}
-          {printingOrder.note && (
-            <>
-              <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-              <div><span style={{ fontWeight: 'bold' }}>Note:</span> {printingOrder.note}</div>
-            </>
-          )}
-          <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-          <div style={{ textAlign: 'center', fontSize: '7px' }}>Merci de votre confiance</div>
-        </div>
-      </div>
-    )}
+      )}
     </>
   )
 }
