@@ -7,9 +7,10 @@ interface SimpleAuthProps {
   title: string
   description: string
   onUserIdentified?: (email: string) => void
+  onRoleIdentified?: (role: string) => void
 }
 
-function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified }: SimpleAuthProps) {
+function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified, onRoleIdentified }: SimpleAuthProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -32,6 +33,10 @@ function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified }: Sim
 
       if (data && data.active && data.password === password) {
         if (onUserIdentified) onUserIdentified(data.email)
+        if (onRoleIdentified) {
+          const role = data.role === 'utilisateur' ? 'utilisateur' : 'gerant'
+          onRoleIdentified(role)
+        }
         onAuthSuccess()
       } else {
         setError('Email ou mot de passe incorrect')

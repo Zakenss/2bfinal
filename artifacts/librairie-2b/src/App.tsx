@@ -16,6 +16,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [isEspaceClientAuthenticated, setIsEspaceClientAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState<string>('')
+  const [currentUserRole, setCurrentUserRole] = useState<string>('')
 
   const handlePageSelect = (pageId: Page) => {
     setCurrentPage(pageId)
@@ -23,6 +24,7 @@ function App() {
     if (pageId === 'home') {
       setIsEspaceClientAuthenticated(false)
       setCurrentUser('')
+      setCurrentUserRole('')
     }
   }
 
@@ -230,8 +232,8 @@ function App() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-parchment-300">
-          {/* Gestionnaire */}
-          {currentUser !== 'lib2b@gmail.com' && (
+          {/* Gestionnaire — gérant only */}
+          {currentUserRole === 'gerant' && (
           <button
             onClick={() => handlePageSelect('manager')}
             className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200"
@@ -276,8 +278,8 @@ function App() {
           </button>
           )}
 
-          {/* Zakaria - credential management, only for admin */}
-          {currentUser === 'aichabenzangue@gmail.com' && (
+          {/* Accès - credential management, gérant only */}
+          {currentUserRole === 'gerant' && (
           <button
             onClick={() => handlePageSelect('zakaria')}
             className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200 md:col-span-2 lg:col-span-1"
@@ -287,7 +289,7 @@ function App() {
                 <KeyRound className="h-6 w-6" />
               </div>
               <h3 className="text-2xl font-heading font-bold text-espresso-900">
-                Zakaria
+                Accès
               </h3>
             </div>
             <p className="text-espresso-700 mb-4 leading-relaxed">
@@ -318,6 +320,7 @@ function App() {
             title="Espace Client"
             description="Connectez-vous pour accéder aux services clients"
             onUserIdentified={setCurrentUser}
+            onRoleIdentified={setCurrentUserRole}
           />
         )
       case 'espace-client':
@@ -329,7 +332,7 @@ function App() {
       case 'follow-up':
         return isEspaceClientAuthenticated ? <FollowUp onNavigate={setCurrentPage} /> : renderHomePage()
       case 'manager':
-        return (isEspaceClientAuthenticated && currentUser !== 'lib2b@gmail.com') ? <ManagerDashboard onNavigate={setCurrentPage} /> : renderHomePage()
+        return (isEspaceClientAuthenticated && currentUserRole === 'gerant') ? <ManagerDashboard onNavigate={setCurrentPage} /> : renderHomePage()
       case 'correction':
         return isEspaceClientAuthenticated ? <Correction onNavigate={setCurrentPage} /> : renderHomePage()
       case 'ecole':
@@ -337,7 +340,7 @@ function App() {
       case 'couverture':
         return (isEspaceClientAuthenticated && (currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com')) ? <CouverturePage onNavigate={setCurrentPage} currentUser={currentUser} /> : renderHomePage()
       case 'zakaria':
-        return (isEspaceClientAuthenticated && currentUser === 'aichabenzangue@gmail.com') ? <AccessPage onNavigate={setCurrentPage} /> : renderHomePage()
+        return (isEspaceClientAuthenticated && currentUserRole === 'gerant') ? <AccessPage onNavigate={setCurrentPage} /> : renderHomePage()
       default:
         return renderHomePage()
     }

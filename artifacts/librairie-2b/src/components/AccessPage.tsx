@@ -7,6 +7,7 @@ interface PortalUser {
   space: 'espace_client' | 'espace_adjoint'
   username: string
   email?: string
+  role?: string
   active: boolean
   created_at: string
 }
@@ -20,6 +21,7 @@ const EMPTY_FORM = {
   username: '',
   email: '',
   password: '',
+  role: 'gerant' as 'gerant' | 'utilisateur',
   active: true,
 }
 
@@ -79,8 +81,12 @@ function AccessPage({ onNavigate }: AccessPageProps) {
         payload.email = form.email.trim().toLowerCase()
         payload.username = form.email.trim().toLowerCase()
         payload.password = form.password
+        payload.role = form.role
       } else {
         payload.username = form.username.trim()
+        payload.email = form.username.trim()
+        payload.password = ''
+        payload.role = 'collaborateur'
       }
       const { error } = await supabase.from('users').insert([payload])
       if (error) throw error
@@ -124,6 +130,13 @@ function AccessPage({ onNavigate }: AccessPageProps) {
 
   const filtered = spaceFilter === 'all' ? users : users.filter(u => u.space === spaceFilter)
   const isClientForm = form.space === 'espace_client'
+
+  const roleLabel = (r?: string) => {
+    if (r === 'utilisateur') return 'Utilisateur'
+    if (r === 'gerant') return 'Gérant'
+    if (r === 'collaborateur') return 'Collaborateur'
+    return r || '—'
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 pb-12">
@@ -243,6 +256,30 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                     className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-3">
+                    Rôle
+                  </label>
+                  <div className="flex gap-4">
+                    {(['utilisateur', 'gerant'] as const).map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setForm({ ...form, role: r })}
+                        className={`flex-1 py-4 border-2 rounded-xl font-bold uppercase tracking-widest text-sm transition-all ${
+                          form.role === r
+                            ? 'border-espresso-800 bg-espresso-50 text-espresso-900'
+                            : 'border-parchment-300 bg-white text-espresso-500'
+                        }`}
+                      >
+                        {r === 'utilisateur' ? 'Utilisateur' : 'Gérant'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-espresso-400 font-medium">
+                    Utilisateur : accès standard · Gérant : accès complet (Gestionnaire + Accès)
+                  </p>
+                </div>
               </>
             ) : (
               <div>
@@ -294,18 +331,11 @@ function AccessPage({ onNavigate }: AccessPageProps) {
             <table className="min-w-full text-left">
               <thead className="bg-parchment-100 border-b border-parchment-200">
                 <tr>
-                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest">
-                    Identifiant
-                  </th>
-                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest">
-                    Espace
-                  </th>
-                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest text-center">
-                    Statut
-                  </th>
-                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest text-right">
-                    Actions
-                  </th>
+                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest">Identifiant</th>
+                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest">Espace</th>
+                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest">Rôle</th>
+                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest text-center">Statut</th>
+                  <th className="px-6 py-5 text-xs font-bold text-espresso-500 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-parchment-100">
@@ -317,6 +347,17 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                     <td className="px-6 py-5">
                       <span className="inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full border border-parchment-300 bg-parchment-100 text-espresso-700">
                         {SPACE_LABELS[user.space] ?? user.space}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full ${
+                        user.role === 'gerant'
+                          ? 'bg-espresso-900 text-parchment-100'
+                          : user.role === 'utilisateur'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-parchment-100 text-espresso-500 border border-parchment-300'
+                      }`}>
+                        {roleLabel(user.role)}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-center">
