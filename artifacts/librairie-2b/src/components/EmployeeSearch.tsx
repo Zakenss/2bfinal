@@ -309,7 +309,7 @@ function EmployeeSearch() {
               <div>
                 <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Date</span>
                 <p className="text-lg font-medium text-espresso-900">
-                  {new Date(bookList.created_at).toLocaleDateString('fr-FR')}
+                  {new Date(bookList.created_at ?? '').toLocaleDateString('fr-FR')}
                 </p>
               </div>
               <div>

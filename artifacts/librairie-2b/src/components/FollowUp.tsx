@@ -46,7 +46,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
       const { data, error } = await supabase.from('students').select('*').order('nom', { ascending: true })
       if (error) throw error
       setAllOrders(data || [])
-      const uniqueNames = Array.from(new Set(data?.map(order => order.nom.trim()).filter(Boolean) || [])).sort()
+      const uniqueNames = Array.from(new Set(data?.map(order => (order.nom ?? '').trim()).filter(Boolean) || [])).sort()
       setFilteredNames(uniqueNames)
     } catch (error) {
       console.error('Error loading all orders:', error)
@@ -67,7 +67,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
     setShowEcoleDropdown(false)
     setShowNameDropdown(false)
     setFilteredEcoles(ecoles)
-    setFilteredNames(Array.from(new Set(allOrders.map(order => order.nom.trim()).filter(Boolean))).sort())
+    setFilteredNames(Array.from(new Set(allOrders.map(order => (order.nom ?? '').trim()).filter(Boolean))).sort())
     
     if (mode === 'school' && ecoles.length === 0) loadEcoles()
     if (mode === 'name' && allOrders.length === 0) loadAllOrders()
@@ -244,7 +244,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                 value={nameSearch}
                 onChange={(e) => {
                   setNameSearch(e.target.value)
-                  setFilteredNames(Array.from(new Set(allOrders.map(o => o.nom.trim()))).filter(n => n.toLowerCase().includes(e.target.value.toLowerCase())).sort())
+                  setFilteredNames(Array.from(new Set(allOrders.map(o => (o.nom ?? '').trim()))).filter(n => n.toLowerCase().includes(e.target.value.toLowerCase())).sort())
                   setShowNameDropdown(true)
                 }}
                 onFocus={() => setShowNameDropdown(true)}
@@ -302,7 +302,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                   </div>
                   <div>
                     <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Date</span>
-                    <span className="text-lg font-medium text-espresso-900">{new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-lg font-medium text-espresso-900">{new Date(order.created_at ?? '').toLocaleDateString('fr-FR')}</span>
                   </div>
                   <div>
                     <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">École</span>

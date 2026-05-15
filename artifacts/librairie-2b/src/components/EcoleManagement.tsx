@@ -80,10 +80,9 @@ function EcoleManagement({ onNavigate }: EcoleManagementProps) {
   }
 
   useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(null), 3000)
-      return () => clearTimeout(timer)
-    }
+    if (!message) return
+    const timer = setTimeout(() => setMessage(null), 3000)
+    return () => clearTimeout(timer)
   }, [message])
 
   if (isLoading) {

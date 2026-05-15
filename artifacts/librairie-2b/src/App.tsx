@@ -10,7 +10,7 @@ import Correction from './components/Correction'
 import CouverturePage from './components/CouverturePage'
 import AccessPage from './components/AccessPage'
 
-type Page = 'client' | 'employee' | 'manager' | 'ecole' | 'home' | 'espace-client' | 'follow-up' | 'correction' | 'couverture' | 'zakaria'
+type Page = 'client' | 'employee' | 'manager' | 'ecole' | 'home' | 'espace-client' | 'espace-client-auth' | 'follow-up' | 'correction' | 'couverture' | 'zakaria'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home')

@@ -33,8 +33,8 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
 
   useEffect(() => {
     let filtered = bookLists
-    if (searchCode) filtered = filtered.filter(b => b.code.toLowerCase().includes(searchCode.toLowerCase()))
-    if (searchName) filtered = filtered.filter(b => b.nom.toLowerCase().includes(searchName.toLowerCase()))
+    if (searchCode) filtered = filtered.filter(b => (b.code ?? '').toLowerCase().includes(searchCode.toLowerCase()))
+    if (searchName) filtered = filtered.filter(b => (b.nom ?? '').toLowerCase().includes(searchName.toLowerCase()))
     if (showOnlyNonEnvoyees) filtered = filtered.filter(b => !b.couverture_sent)
     setFilteredBookLists(filtered)
   }, [bookLists, searchCode, searchName, showOnlyNonEnvoyees])
@@ -115,7 +115,7 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
               <div className="p-6 flex-grow flex flex-col">
                 <h3 className="text-xl font-bold text-espresso-900 mb-1">{order.nom}</h3>
                 <p className="text-sm text-espresso-600 mb-1">{order.ecole} — {order.niveau}</p>
-                <p className="text-xs font-medium text-espresso-400 mb-6">{new Date(order.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                <p className="text-xs font-medium text-espresso-400 mb-6">{new Date(order.created_at ?? '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 <div className="mt-auto pt-6 border-t border-parchment-200">
                   <button
                     onClick={() => handleMarkAsSent(order)}

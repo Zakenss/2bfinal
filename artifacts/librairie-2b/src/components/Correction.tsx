@@ -124,19 +124,19 @@ function Correction({ onNavigate }: CorrectionProps) {
       const key = `${order.nom}-${order.email}-${order.telephone}`
       if (!grouped[key]) {
         grouped[key] = {
-          nom: order.nom,
-          email: order.email,
-          telephone: order.telephone,
+          nom: order.nom ?? '',
+          email: order.email ?? '',
+          telephone: order.telephone ?? '',
           avance: order.avance,
-          note: order.note,
-          couverture_demandee: order.couverture_demandee,
-          created_at: order.created_at,
+          note: order.note ?? '',
+          couverture_demandee: order.couverture_demandee ?? false,
+          created_at: order.created_at ?? '',
           children: [],
         }
       }
       grouped[key].children.push(order)
-      if (new Date(order.created_at) < new Date(grouped[key].created_at)) {
-        grouped[key].created_at = order.created_at
+      if (new Date(order.created_at ?? '') < new Date(grouped[key].created_at)) {
+        grouped[key].created_at = order.created_at ?? ''
       }
     }
     const sorted = Object.values(grouped).sort(
@@ -149,7 +149,7 @@ function Correction({ onNavigate }: CorrectionProps) {
     let filtered = groupedOrders
     if (searchCode) {
       filtered = filtered.filter(g =>
-        g.children.some(c => c.code.toLowerCase().includes(searchCode.toLowerCase()))
+        g.children.some(c => (c.code ?? '').toLowerCase().includes(searchCode.toLowerCase()))
       )
     }
     if (searchName) {
@@ -208,9 +208,9 @@ function Correction({ onNavigate }: CorrectionProps) {
       nom: order.nom,
       children: order.children.map(c => ({
         id: c.id,
-        ecole: c.ecole,
-        niveau: c.niveau,
-        genre: c.genre || '',
+        ecole: c.ecole ?? '',
+        niveau: c.niveau ?? '',
+        genre: (c.genre as 'fille' | 'garcon' | '') || '',
       })),
       email: order.email,
       telephone: order.telephone,

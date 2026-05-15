@@ -121,13 +121,13 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
 
     if (searchCode.trim()) {
       filtered = filtered.filter(item => 
-        item.code.toLowerCase().includes(searchCode.toLowerCase())
+        (item.code ?? '').toLowerCase().includes(searchCode.toLowerCase())
       )
     }
 
     if (dateFilter) {
       filtered = filtered.filter(item => {
-        const itemDate = new Date(item.created_at).toISOString().split('T')[0]
+        const itemDate = new Date(item.created_at ?? '').toISOString().split('T')[0]
         return itemDate === dateFilter
       })
     }
@@ -388,7 +388,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
                         <User className="h-4 w-4 mr-2" />
                         {activity.modified_by}
                       </td>
-                      <td className="px-6 py-4">{getStatusBadge(activity.liste_prete)}</td>
+                      <td className="px-6 py-4">{getStatusBadge(activity.liste_prete ?? false)}</td>
                       <td className="px-6 py-4 text-espresso-700">
                         {activity.modified_at && (
                           <>
@@ -485,11 +485,11 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
                       <div className="text-xs text-espresso-500 mt-1">{order.niveau}</div>
                     </td>
                     <td className="px-6 py-5 text-espresso-700 hidden lg:table-cell">
-                      {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                      {new Date(order.created_at ?? '').toLocaleDateString('fr-FR')}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col items-start gap-2">
-                        {getStatusBadge(order.liste_prete)}
+                        {getStatusBadge(order.liste_prete ?? false)}
                         {order.liste_prete && order.rangee && order.niveau_rangement && (
                           <span className="text-xs font-bold text-espresso-600 bg-parchment-100 px-2 py-1 rounded">
                             {order.rangee}-{order.niveau_rangement}
