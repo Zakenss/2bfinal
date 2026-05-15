@@ -8,7 +8,7 @@ import EcoleManagement from './components/EcoleManagement'
 import FollowUp from './components/FollowUp'
 import Correction from './components/Correction'
 import CouverturePage from './components/CouverturePage'
-import ZakariaPage from './components/ZakariaPage'
+import AccessPage from './components/AccessPage'
 
 type Page = 'client' | 'employee' | 'manager' | 'ecole' | 'home' | 'espace-client' | 'follow-up' | 'correction' | 'couverture' | 'zakaria'
 
@@ -82,7 +82,7 @@ function App() {
             </div>
           </button>
 
-          {/* Espace Adjoint */}
+          {/* Espace Collaborateur */}
           <button
             onClick={() => handlePageSelect('employee')}
             className="group bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-left shadow-book hover:shadow-book-hover transition-all duration-300 transform hover:-translate-y-1 border border-parchment-300 flex flex-col"
@@ -95,7 +95,7 @@ function App() {
             </div>
             
             <h3 className="text-3xl font-heading font-bold text-espresso-900 mb-4">
-              Espace Adjoint
+              Espace Collaborateur
             </h3>
             
             <p className="text-espresso-600 mb-8 leading-relaxed flex-grow">
@@ -337,7 +337,7 @@ function App() {
       case 'couverture':
         return (isEspaceClientAuthenticated && (currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com')) ? <CouverturePage onNavigate={setCurrentPage} currentUser={currentUser} /> : renderHomePage()
       case 'zakaria':
-        return (isEspaceClientAuthenticated && currentUser === 'aichabenzangue@gmail.com') ? <ZakariaPage onNavigate={setCurrentPage} /> : renderHomePage()
+        return (isEspaceClientAuthenticated && currentUser === 'aichabenzangue@gmail.com') ? <AccessPage onNavigate={setCurrentPage} /> : renderHomePage()
       default:
         return renderHomePage()
     }

@@ -315,7 +315,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
           <div className="px-8 py-5 border-b border-parchment-200 bg-parchment-100">
             <h2 className="text-xl font-heading font-bold text-espresso-900 flex items-center space-x-3">
               <Clock className="h-5 w-5 text-amber-700" />
-              <span>Activité des Adjoints</span>
+              <span>Activité des Collaborateurs</span>
             </h2>
           </div>
           
@@ -331,13 +331,13 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Adjoint</label>
+                <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Collaborateur</label>
                 <select
                   value={activityFilters.employeeName}
                   onChange={(e) => setActivityFilters(prev => ({ ...prev, employeeName: e.target.value }))}
                   className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
                 >
-                  <option value="">Tous les adjoints</option>
+                  <option value="">Tous les collaborateurs</option>
                   {Array.from(new Set(employeeActivities.map(activity => activity.modified_by).filter(Boolean))).sort().map(name => (
                     <option key={name} value={name as string}>{name}</option>
                   ))}
@@ -373,7 +373,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
                     <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Code</th>
                     <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Client</th>
                     <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs hidden md:table-cell">École</th>
-                    <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Adjoint</th>
+                    <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Collaborateur</th>
                     <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Statut</th>
                     <th className="px-6 py-4 font-bold text-espresso-500 uppercase tracking-widest text-xs">Date</th>
                   </tr>

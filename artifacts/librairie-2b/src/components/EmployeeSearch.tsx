@@ -137,7 +137,7 @@ function EmployeeSearch() {
               <Search className="h-10 w-10 text-parchment-100" />
             </div>
             <h1 className="text-4xl font-heading font-bold text-espresso-900 mb-3">
-              Espace Adjoint
+              Espace Collaborateur
             </h1>
             <p className="text-base text-espresso-600 font-medium">
               Connectez-vous pour gérer les commandes
@@ -231,7 +231,7 @@ function EmployeeSearch() {
           <Search className="h-8 w-8 text-parchment-100" />
         </div>
         <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
-          Recherche Adjoint
+          Recherche Collaborateur
         </h1>
         <p className="text-lg text-espresso-600 font-medium">
           Entrez le code à 4 caractères pour mettre à jour une commande.
