@@ -114,7 +114,8 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
               </div>
               <div className="p-6 flex-grow flex flex-col">
                 <h3 className="text-xl font-bold text-espresso-900 mb-1">{order.nom}</h3>
-                <p className="text-sm text-espresso-600 mb-6">{order.ecole} - {order.niveau}</p>
+                <p className="text-sm text-espresso-600 mb-1">{order.ecole} — {order.niveau}</p>
+                <p className="text-xs font-medium text-espresso-400 mb-6">{new Date(order.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 <div className="mt-auto pt-6 border-t border-parchment-200">
                   <button
                     onClick={() => handleMarkAsSent(order)}
