@@ -312,6 +312,12 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                     <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Niveau</span>
                     <span className="text-lg font-medium text-espresso-900">{order.niveau}</span>
                   </div>
+                  {order.avance != null && (
+                    <div>
+                      <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Avance versée</span>
+                      <span className="text-lg font-bold text-green-700">{order.avance} DHS</span>
+                    </div>
+                  )}
                 </div>
 
                 {order.liste_prete && (
