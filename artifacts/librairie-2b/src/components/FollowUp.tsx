@@ -320,8 +320,21 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                   )}
                 </div>
 
+                {order.liste_prete && (order.rangee || order.niveau_rangement) && (
+                  <div className="mt-6 p-5 bg-espresso-50 border border-espresso-200 rounded-2xl flex flex-col sm:flex-row gap-6">
+                    <div className="flex-1">
+                      <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Rangée</span>
+                      <span className="text-2xl font-bold text-espresso-900">{order.rangee || '—'}</span>
+                    </div>
+                    <div className="flex-1">
+                      <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Niveau de rangement</span>
+                      <span className="text-2xl font-bold text-espresso-900">{order.niveau_rangement || '—'}</span>
+                    </div>
+                  </div>
+                )}
+
                 {order.liste_prete && (
-                  <div className="mt-8 pt-6 border-t border-parchment-200 text-center">
+                  <div className="mt-6 pt-6 border-t border-parchment-200 text-center">
                     <p className="text-lg font-bold text-green-700 bg-green-50 p-4 rounded-xl border border-green-200">
                       🎉 Votre liste est prête ! Vous pouvez passer la récupérer.
                     </p>
