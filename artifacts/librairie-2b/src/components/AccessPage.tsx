@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   username: '',
   email: '',
   password: '',
+  collabPassword: '',
   role: 'gerant' as 'gerant' | 'utilisateur',
   active: true,
 }
@@ -85,7 +86,7 @@ function AccessPage({ onNavigate }: AccessPageProps) {
       } else {
         payload.username = form.username.trim()
         payload.email = form.username.trim()
-        payload.password = ''
+        payload.password = form.collabPassword
         payload.role = 'user'
       }
       const { error } = await supabase.from('users').insert([payload])
@@ -282,19 +283,34 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                 </div>
               </>
             ) : (
-              <div>
-                <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                  Identifiant
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={form.username}
-                  onChange={e => setForm({ ...form, username: e.target.value })}
-                  placeholder="Ex: marie.dupont"
-                  className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                    Identifiant
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={form.username}
+                    onChange={e => setForm({ ...form, username: e.target.value })}
+                    placeholder="Ex: marie.dupont"
+                    className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                    Mot de passe
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={form.collabPassword}
+                    onChange={e => setForm({ ...form, collabPassword: e.target.value })}
+                    placeholder="Mot de passe"
+                    className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
+                  />
+                </div>
+              </>
             )}
 
             <div className="flex justify-end gap-4 pt-4 border-t border-parchment-200">

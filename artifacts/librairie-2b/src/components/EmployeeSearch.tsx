@@ -32,17 +32,26 @@ function EmployeeSearch() {
     setIsLoggingIn(true)
     setAuthError('')
 
-    const employee = EMPLOYEE_CREDENTIALS.find(
-      emp => emp.username === authForm.username && emp.password === authForm.password
-    )
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username, password, active')
+        .eq('username', authForm.username.trim())
+        .eq('space', 'espace_adjoint')
+        .maybeSingle()
 
-    if (employee) {
-      setIsAuthenticated(true)
-      setCurrentEmployee(employee.name)
-    } else {
-      setAuthError('Nom d\'utilisateur ou mot de passe incorrect')
+      if (error) throw error
+
+      if (data && data.active && data.password === authForm.password) {
+        setIsAuthenticated(true)
+        setCurrentEmployee(data.username)
+      } else {
+        setAuthError('Nom d\'utilisateur ou mot de passe incorrect')
+      }
+    } catch {
+      setAuthError('Erreur de connexion. Veuillez réessayer.')
     }
-    
+
     setIsLoggingIn(false)
   }
 
