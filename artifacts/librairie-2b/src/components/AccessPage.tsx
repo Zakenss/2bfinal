@@ -81,12 +81,12 @@ function AccessPage({ onNavigate }: AccessPageProps) {
         payload.email = form.email.trim().toLowerCase()
         payload.username = form.email.trim().toLowerCase()
         payload.password = form.password
-        payload.role = form.role
+        payload.role = form.role === 'gerant' ? 'admin' : 'user'
       } else {
         payload.username = form.username.trim()
         payload.email = form.username.trim()
         payload.password = ''
-        payload.role = 'collaborateur'
+        payload.role = 'user'
       }
       const { error } = await supabase.from('users').insert([payload])
       if (error) throw error
@@ -131,10 +131,10 @@ function AccessPage({ onNavigate }: AccessPageProps) {
   const filtered = spaceFilter === 'all' ? users : users.filter(u => u.space === spaceFilter)
   const isClientForm = form.space === 'espace_client'
 
-  const roleLabel = (r?: string) => {
-    if (r === 'utilisateur') return 'Utilisateur'
-    if (r === 'gerant') return 'Gérant'
-    if (r === 'collaborateur') return 'Collaborateur'
+  const roleLabel = (r?: string, space?: string) => {
+    if (r === 'admin') return 'Gérant'
+    if (r === 'user' && space === 'espace_adjoint') return 'Collaborateur'
+    if (r === 'user') return 'Utilisateur'
     return r || '—'
   }
 
@@ -351,13 +351,13 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                     </td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full ${
-                        user.role === 'gerant'
+                        user.role === 'admin'
                           ? 'bg-espresso-900 text-parchment-100'
-                          : user.role === 'utilisateur'
+                          : user.role === 'user' && user.space === 'espace_client'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200'
                           : 'bg-parchment-100 text-espresso-500 border border-parchment-300'
                       }`}>
-                        {roleLabel(user.role)}
+                        {roleLabel(user.role, user.space)}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-center">

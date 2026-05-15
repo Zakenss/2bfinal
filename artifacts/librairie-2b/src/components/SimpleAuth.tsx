@@ -24,7 +24,7 @@ function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified, onRol
     try {
       const { data, error: dbError } = await supabase
         .from('users')
-        .select('email, password, active')
+        .select('email, password, active, role')
         .eq('email', email.trim().toLowerCase())
         .eq('space', 'espace_client')
         .maybeSingle()
@@ -34,7 +34,7 @@ function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified, onRol
       if (data && data.active && data.password === password) {
         if (onUserIdentified) onUserIdentified(data.email)
         if (onRoleIdentified) {
-          const role = data.role === 'utilisateur' ? 'utilisateur' : 'gerant'
+          const role = data.role === 'admin' ? 'gerant' : 'utilisateur'
           onRoleIdentified(role)
         }
         onAuthSuccess()
