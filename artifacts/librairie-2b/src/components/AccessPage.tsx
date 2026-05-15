@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Trash2, Users, Shield, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, Shield, RefreshCw } from 'lucide-react'
 
 interface PortalUser {
   id: string
   space: 'espace_client' | 'espace_adjoint'
   username: string
+  email?: string
   active: boolean
   created_at: string
 }
@@ -17,6 +18,8 @@ interface AccessPageProps {
 const EMPTY_FORM = {
   space: 'espace_client' as 'espace_client' | 'espace_adjoint',
   username: '',
+  email: '',
+  password: '',
   active: true,
 }
 
@@ -55,18 +58,31 @@ function AccessPage({ onNavigate }: AccessPageProps) {
     }
   }
 
+  const handleSpaceChange = (s: 'espace_client' | 'espace_adjoint') => {
+    setForm({ ...EMPTY_FORM, space: s })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.username.trim()) return
+    const isClient = form.space === 'espace_client'
+    if (isClient && (!form.email.trim() || !form.password.trim())) return
+    if (!isClient && !form.username.trim()) return
     setIsSaving(true)
     setError('')
     setSuccess('')
     try {
-      const { error } = await supabase.from('users').insert([{
+      const payload: Record<string, unknown> = {
         space: form.space,
-        username: form.username.trim(),
         active: form.active,
-      }])
+      }
+      if (isClient) {
+        payload.email = form.email.trim().toLowerCase()
+        payload.username = form.email.trim().toLowerCase()
+        payload.password = form.password
+      } else {
+        payload.username = form.username.trim()
+      }
+      const { error } = await supabase.from('users').insert([payload])
       if (error) throw error
       setSuccess('Utilisateur ajouté avec succès.')
       setForm(EMPTY_FORM)
@@ -107,6 +123,7 @@ function AccessPage({ onNavigate }: AccessPageProps) {
   }
 
   const filtered = spaceFilter === 'all' ? users : users.filter(u => u.space === spaceFilter)
+  const isClientForm = form.space === 'espace_client'
 
   return (
     <div className="max-w-6xl mx-auto px-4 pb-12">
@@ -185,7 +202,7 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setForm({ ...form, space: s })}
+                    onClick={() => handleSpaceChange(s)}
                     className={`flex-1 py-4 border-2 rounded-xl font-bold uppercase tracking-widest text-sm transition-all ${
                       form.space === s
                         ? 'border-amber-600 bg-amber-50 text-amber-800'
@@ -198,19 +215,50 @@ function AccessPage({ onNavigate }: AccessPageProps) {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                Identifiant
-              </label>
-              <input
-                type="text"
-                required
-                value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
-                placeholder="Ex: marie.dupont"
-                className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
-              />
-            </div>
+            {isClientForm ? (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    placeholder="ex: utilisateur@exemple.com"
+                    className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                    Mot de passe
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    placeholder="Mot de passe"
+                    className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
+                  />
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
+                  Identifiant
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.username}
+                  onChange={e => setForm({ ...form, username: e.target.value })}
+                  placeholder="Ex: marie.dupont"
+                  className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-parchment-50 font-medium text-espresso-900 focus:border-amber-500 focus:ring-0"
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-4 pt-4 border-t border-parchment-200">
               <button
@@ -264,7 +312,7 @@ function AccessPage({ onNavigate }: AccessPageProps) {
                 {filtered.map(user => (
                   <tr key={user.id} className="hover:bg-parchment-50 transition-colors">
                     <td className="px-6 py-5">
-                      <div className="font-bold text-espresso-900">{user.username || '—'}</div>
+                      <div className="font-bold text-espresso-900">{user.email || user.username || '—'}</div>
                     </td>
                     <td className="px-6 py-5">
                       <span className="inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full border border-parchment-300 bg-parchment-100 text-espresso-700">
