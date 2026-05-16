@@ -33,16 +33,25 @@ interface EditFormData {
 }
 
 function buildReceiptHTML(order: GroupedOrder): string {
-  const date = new Date(order.created_at).toLocaleString('fr-FR')
+  const date = new Date(order.created_at).toLocaleString('fr-FR', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  })
+  const multiChild = order.children.length > 1
+
   const childrenRows = order.children
-    .map(
-      (child, i) => `
-        <div style="margin-bottom:5px;">
-          <div style="font-weight:bold;">Enfant ${i + 1} &mdash; Code: ${child.code}</div>
-          <div>&#201;cole: ${child.ecole}</div>
-          <div>Niveau: ${child.niveau}${child.genre ? ` (${child.genre})` : ''}</div>
-        </div>`
-    )
+    .map((child, i) => `
+      <div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;">
+        ${multiChild ? `<div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:2px;">— ENFANT ${i + 1} —</div>` : ''}
+        <div style="border:1px solid #000;text-align:center;padding:4px 2px;margin-bottom:3px;">
+          <div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-bottom:2px;">${multiChild ? `ENFANT ${i + 1} — ` : ''}CODE R&Eacute;F&Eacute;RENCE</div>
+          <div style="font-size:20px;font-weight:bold;letter-spacing:5px;line-height:1.2;">${child.code}</div>
+          ${multiChild ? `<div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-top:2px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">&#201;COLE:</span><span style="text-align:right;word-break:break-word;flex:1;">${child.ecole}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">NIVEAU:</span><span>${child.niveau}</span></div>
+        ${child.genre ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">GENRE:</span><span>${child.genre}</span></div>` : ''}
+      </div>`)
     .join('')
 
   return `<!DOCTYPE html>
@@ -51,40 +60,41 @@ function buildReceiptHTML(order: GroupedOrder): string {
   <meta charset="UTF-8" />
   <title>Re&ccedil;u &mdash; ${order.nom}</title>
   <style>
-    @page { size: 58mm auto; margin: 1.5mm; }
+    @page { size: 57mm auto; margin: 2mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: monospace;
-      font-size: 8px;
-      line-height: 1.4;
+      font-size: 9px;
+      line-height: 1.45;
       color: #000;
       width: 53mm;
-      padding: 2mm;
+      padding: 3mm 2mm;
     }
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    .title { font-size: 10px; font-weight: bold; text-align: center; margin-bottom: 4px; }
-    .subtitle { text-align: center; margin-bottom: 6px; }
-    .divider { border-top: 1px dashed #000; margin: 4px 0; }
-    .row { margin-bottom: 2px; }
-    .footer { text-align: center; font-size: 7px; margin-top: 4px; }
   </style>
 </head>
 <body>
-  <div class="title">LIBRAIRIE 2B</div>
-  <div class="subtitle">Re&ccedil;u de commande</div>
-  <div class="divider"></div>
-  <div class="row"><span class="bold">Client:</span> ${order.nom}</div>
-  ${order.telephone ? `<div class="row"><span class="bold">T&eacute;l:</span> ${order.telephone}</div>` : ''}
-  ${order.email ? `<div class="row"><span class="bold">Email:</span> ${order.email}</div>` : ''}
-  <div class="row"><span class="bold">Date:</span> ${date}</div>
-  ${order.avance ? `<div class="row"><span class="bold">Avance:</span> ${order.avance} DHS</div>` : ''}
-  ${order.couverture_demandee ? `<div class="row"><span class="bold">Couverture:</span> Oui</div>` : ''}
-  <div class="divider"></div>
-  ${childrenRows}
-  ${order.note ? `<div class="divider"></div><div class="row"><span class="bold">Note:</span> ${order.note}</div>` : ''}
-  <div class="divider"></div>
-  <div class="footer">Merci de votre confiance</div>
+  <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:4px;margin-bottom:5px;">
+    <div style="font-size:12px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
+    <div style="font-size:7.5px;margin-top:2px;">${date}</div>
+  </div>
+
+  <div style="text-align:center;font-weight:bold;font-size:9px;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">
+    Re&ccedil;u de commande
+  </div>
+
+  <div style="border-top:1px dashed #000;padding-top:4px;margin-top:2px;">
+    <div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">&mdash;&mdash; D&Eacute;TAILS &mdash;&mdash;</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">CLIENT:</span><span style="text-align:right;word-break:break-word;flex:1;">${order.nom}</span></div>
+    ${order.telephone ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">T&Eacute;L:</span><span>${order.telephone}</span></div>` : ''}
+    ${order.avance ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">AVANCE:</span><span>${order.avance} DHS</span></div>` : ''}
+    ${order.couverture_demandee ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">COUVERTURE:</span><span>OUI</span></div>` : ''}
+    ${childrenRows}
+    ${order.note ? `<div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;"><div style="font-weight:bold;">NOTE:</div><div style="word-break:break-word;text-transform:uppercase;margin-top:1px;">${order.note}</div></div>` : ''}
+  </div>
+
+  <div style="border-top:2px solid #000;margin-top:5px;padding-top:4px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:7.5px;letter-spacing:0.5px;">
+    Merci de votre confiance
+  </div>
 </body>
 </html>`
 }

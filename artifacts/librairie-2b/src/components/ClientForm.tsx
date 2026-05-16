@@ -312,106 +312,118 @@ function ClientForm({ onNavigate }: ClientFormProps) {
   }
 
   if (submissionResult?.success) {
-    return (
-      <div className="max-w-md mx-auto pt-8">
-        <div className="sr-only" role="status" aria-live="polite">
-          Commande soumise avec succès. Codes de référence: {submissionResult.codes?.join(', ')}
-        </div>
-        
-        <div id="print-section" className="bg-white p-2 text-xs leading-tight shadow-md border border-gray-200">
-          <div className="mb-2">
-            <div className="mb-2 text-center border-b border-dashed border-gray-400 pb-2">
-              <h1 className="text-xl font-heading font-bold text-black mb-1">
-                ESPACE BEN ALI
-              </h1>
-              <div className="text-xs text-gray-800 leading-tight uppercase">
-                <p>
-                  {new Date(Date.now() - 60 * 60 * 1000).toLocaleDateString('fr-FR', { 
-                    year: 'numeric', month: 'long', day: 'numeric' 
-                  })}
-                </p>
-                <p>
-                {new Date(Date.now() - 60 * 60 * 1000).toLocaleTimeString('fr-FR', { 
-                  hour: '2-digit', minute: '2-digit' 
-                })}
-                </p>
-              </div>
-            </div>
-            
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center mx-auto mb-2 text-white print:border print:border-black">
-              <Check className="h-5 w-5" />
-            </div>
-            
-            <h2 className="text-base font-bold text-black mb-3 text-center uppercase tracking-widest">
-              Commande Confirmée
-            </h2>
-            
-            {submissionResult.formData?.childrenWithCodes && submissionResult.formData.childrenWithCodes.length > 0 && (
-              <div className="space-y-2 mb-3">
-                {submissionResult.formData.childrenWithCodes.map((child, index) => (
-                  <div key={index} className="border border-black p-2 text-center">
-                    <p className="text-xs font-bold uppercase mb-1">
-                      {submissionResult.formData?.childrenWithCodes && submissionResult.formData.childrenWithCodes.length > 1 
-                        ? `ENFANT ${index + 1}` 
-                        : 'CODE RÉFÉRENCE'}
-                    </p>
-                    <p className="text-2xl font-bold tracking-widest font-mono">
-                      {child.code}
-                    </p>
-                    {submissionResult.formData?.childrenWithCodes && submissionResult.formData.childrenWithCodes.length > 1 && (
-                      <p className="text-xs font-bold mt-1 uppercase">
-                        {child.ecole} - {child.niveau}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+    const R = submissionResult
+    const now = new Date(Date.now() - 60 * 60 * 1000)
+    const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const multiChild = (R.formData?.childrenWithCodes?.length ?? 0) > 1
 
-            <div className="border-t border-dashed border-gray-400 pt-2 mb-2 text-left">
-              <h3 className="text-xs font-bold mb-2 text-center">DÉTAILS</h3>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between items-start">
-                  <span className="font-bold">CLIENT:</span>
-                  <span className="font-bold text-right flex-1 break-words">{submissionResult.formData?.nom}</span>
+    const row = (label: string, value: React.ReactNode) => (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2px' }}>
+        <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginRight: '4px' }}>{label}</span>
+        <span style={{ textAlign: 'right', wordBreak: 'break-word', flex: 1 }}>{value}</span>
+      </div>
+    )
+
+    return (
+      <div className="max-w-xs mx-auto pt-8">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page { size: 57mm auto; margin: 2mm; }
+            body > * { display: none !important; }
+            #print-root { display: block !important; }
+          }
+          #print-root { display: block; }
+        ` }} />
+
+        <div id="print-root">
+          <div
+            id="print-section"
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '9px',
+              lineHeight: '1.45',
+              color: '#000',
+              backgroundColor: '#fff',
+              width: '53mm',
+              padding: '3mm 2mm',
+              boxSizing: 'border-box',
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '4px', marginBottom: '5px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>ESPACE BEN ALI</div>
+              <div style={{ fontSize: '7.5px', marginTop: '2px' }}>{dateStr}</div>
+              <div style={{ fontSize: '7.5px' }}>{timeStr}</div>
+            </div>
+
+            {/* Confirmed */}
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase', marginBottom: '5px', letterSpacing: '0.5px' }}>
+              ✓ Commande Confirmée
+            </div>
+
+            {/* Code boxes */}
+            {R.formData?.childrenWithCodes?.map((child, index) => (
+              <div key={index} style={{ border: '1px solid #000', textAlign: 'center', padding: '4px 2px', marginBottom: '4px' }}>
+                <div style={{ fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  {multiChild ? `ENFANT ${index + 1} — ` : ''}CODE RÉFÉRENCE
                 </div>
-                {submissionResult.formData?.telephone && (
-                  <div className="flex justify-between items-start">
-                    <span className="font-bold">TÉL:</span>
-                    <span className="font-bold text-right flex-1">{submissionResult.formData.telephone}</span>
-                  </div>
-                )}
-                {submissionResult.formData?.childrenWithCodes && submissionResult.formData.childrenWithCodes.map((child, index) => (
-                  <div key={index} className="border-t border-dashed border-gray-300 pt-1 mt-1">
-                    <div className="text-center mb-1"><span className="font-bold border-b border-black">{submissionResult.formData?.childrenWithCodes && submissionResult.formData.childrenWithCodes.length > 1 ? `ENFANT ${index + 1}` : 'ENFANT'}</span></div>
-                    <div className="flex justify-between items-start"><span className="font-bold">ÉCOLE:</span><span className="font-bold text-right flex-1 break-words">{child.ecole}</span></div>
-                    <div className="flex justify-between items-start"><span className="font-bold">NIVEAU:</span><span className="font-bold text-right flex-1">{child.niveau}</span></div>
-                   <div className="flex justify-between items-start"><span className="font-bold">GENRE:</span><span className="font-bold text-right flex-1">{submissionResult.formData?.children[index]?.genre === 'fille' ? 'Fille' : submissionResult.formData?.children[index]?.genre === 'garcon' ? 'Garçon' : '-'}</span></div>
-                  </div>
-                ))}
-                {submissionResult.formData?.couverture_demandee && (
-                  <div className="border-t border-dashed border-gray-300 pt-1 mt-1">
-                    <div className="flex justify-between items-start"><span className="font-bold">COUVERTURE:</span><span className="font-bold text-right flex-1">OUI</span></div>
-                  </div>
-                )}
-                {submissionResult.formData?.avance && submissionResult.formData.avance !== '0' && (
-                  <div className="border-t border-dashed border-gray-300 pt-1 mt-1">
-                    <div className="flex justify-between items-start"><span className="font-bold">AVANCE:</span><span className="font-bold text-right flex-1">{submissionResult.formData.avance} DHS</span></div>
-                  </div>
-                )}
-                {submissionResult.formData?.note && (
-                  <div className="border-t border-dashed border-gray-300 pt-1 mt-1">
-                    <span className="font-bold">NOTE:</span>
-                    <p className="font-bold text-xs mt-1 break-words uppercase">{submissionResult.formData.note}</p>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', letterSpacing: '5px', lineHeight: '1.2' }}>
+                  {child.code}
+                </div>
+                {multiChild && (
+                  <div style={{ fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                    {child.ecole} — {child.niveau}
                   </div>
                 )}
               </div>
+            ))}
+
+            {/* Details */}
+            <div style={{ borderTop: '1px dashed #000', paddingTop: '4px', marginTop: '2px' }}>
+              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '7.5px', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>
+                ── DÉTAILS ──
+              </div>
+
+              {row('CLIENT:', R.formData?.nom)}
+              {R.formData?.telephone && row('TÉL:', R.formData.telephone)}
+
+              {R.formData?.childrenWithCodes?.map((child, index) => (
+                <div key={index} style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
+                  {multiChild && (
+                    <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '7.5px', textTransform: 'uppercase', marginBottom: '2px' }}>
+                      — ENFANT {index + 1} —
+                    </div>
+                  )}
+                  {row('ÉCOLE:', child.ecole)}
+                  {row('NIVEAU:', child.niveau)}
+                  {row('GENRE:', R.formData?.children[index]?.genre === 'fille' ? 'Fille' : R.formData?.children[index]?.genre === 'garcon' ? 'Garçon' : '-')}
+                </div>
+              ))}
+
+              {R.formData?.couverture_demandee && (
+                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
+                  {row('COUVERTURE:', 'OUI')}
+                </div>
+              )}
+
+              {R.formData?.avance && R.formData.avance !== '0' && (
+                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
+                  {row('AVANCE:', `${R.formData.avance} DHS`)}
+                </div>
+              )}
+
+              {R.formData?.note && (
+                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
+                  <div style={{ fontWeight: 'bold' }}>NOTE:</div>
+                  <div style={{ wordBreak: 'break-word', textTransform: 'uppercase', marginTop: '1px' }}>{R.formData.note}</div>
+                </div>
+              )}
             </div>
-            
-            <div className="border-t-2 border-black pt-2 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest">
-                Merci pour votre confiance
-              </p>
+
+            {/* Footer */}
+            <div style={{ borderTop: '2px solid #000', marginTop: '5px', paddingTop: '4px', textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '7.5px', letterSpacing: '0.5px' }}>
+              Merci pour votre confiance
             </div>
           </div>
         </div>
