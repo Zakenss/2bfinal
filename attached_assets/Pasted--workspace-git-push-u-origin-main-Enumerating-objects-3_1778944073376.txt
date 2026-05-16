@@ -1,0 +1,46 @@
+~/workspace$ git push -u origin main
+Enumerating objects: 342, done.
+Counting objects: 100% (342/342), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (283/283), done.
+Writing objects: 100% (342/342), 982.41 KiB | 39.30 MiB/s, done.
+Total 342 (delta 114), reused 231 (delta 39), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (114/114), done.
+remote: fatal: did not receive expected object 240cc413e4e6dc6aff380fe6bc55c07cc44675ca
+error: remote unpack failed: index-pack failed
+To https://github.com/Zakenss/Massira2-2026
+ ! [remote rejected] main -> main (failed)
+error: failed to push some refs to 'https://github.com/Zakenss/Massira2-2026'
+~/workspace$ git gc --prune=now
+git push -u origin main
+Enumerating objects: 353, done.
+Counting objects: 100% (353/353), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (294/294), done.
+Writing objects: 100% (353/353), done.
+Total 353 (delta 123), reused 231 (delta 39), pack-reused 0 (from 0)
+Enumerating objects: 342, done.
+Counting objects: 100% (342/342), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (215/215), done.
+Writing objects: 100% (342/342), 982.41 KiB | 163.74 MiB/s, done.
+Total 342 (delta 114), reused 331 (delta 107), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (114/114), done.
+remote: fatal: did not receive expected object 240cc413e4e6dc6aff380fe6bc55c07cc44675ca
+error: remote unpack failed: index-pack failed
+To https://github.com/Zakenss/Massira2-2026
+ ! [remote rejected] main -> main (failed)
+error: failed to push some refs to 'https://github.com/Zakenss/Massira2-2026'
+~/workspace$ git push -u origin main --force
+Enumerating objects: 342, done.
+Counting objects: 100% (342/342), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (215/215), done.
+Writing objects: 100% (342/342), 982.41 KiB | 196.48 MiB/s, done.
+Total 342 (delta 114), reused 331 (delta 107), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (114/114), done.
+remote: fatal: did not receive expected object 240cc413e4e6dc6aff380fe6bc55c07cc44675ca
+error: remote unpack failed: index-pack failed
+To https://github.com/Zakenss/Massira2-2026
+ ! [remote rejected] main -> main (failed)
+error: failed to push some refs to 'https://github.com/Zakenss/Massira2-2026'
