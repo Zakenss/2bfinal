@@ -296,159 +296,136 @@ function ClientForm({ onNavigate }: ClientFormProps) {
     return ecoles.filter(ecole => ecole.toLowerCase().includes(currentChild.ecole.toLowerCase()))
   }
 
+  const buildReceiptHTML = (): string => {
+    if (!submissionResult?.success || !submissionResult.formData) return ''
+    const fd = submissionResult.formData
+    const multiChild = (fd.childrenWithCodes?.length ?? 0) > 1
+    const now = new Date(Date.now() - 60 * 60 * 1000)
+    const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+
+    const childrenRows = (fd.childrenWithCodes ?? []).map((child, i) => {
+      const genre = fd.children[i]?.genre === 'fille' ? 'Fille' : fd.children[i]?.genre === 'garcon' ? 'Gar\u00e7on' : '-'
+      return `
+      <div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;">
+        ${multiChild ? `<div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:2px;">\u2014 ENFANT ${i + 1} \u2014</div>` : ''}
+        <div style="border:1px solid #000;text-align:center;padding:4px 2px;margin-bottom:3px;">
+          <div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-bottom:2px;">${multiChild ? `ENFANT ${i + 1} \u2014 ` : ''}CODE R\u00c9F\u00c9RENCE</div>
+          <div style="font-size:20px;font-weight:bold;letter-spacing:5px;line-height:1.2;">${child.code}</div>
+          ${multiChild ? `<div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-top:2px;">${child.ecole} \u2014 ${child.niveau}</div>` : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">\u00c9COLE:</span><span style="text-align:right;word-break:break-word;flex:1;">${child.ecole}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">NIVEAU:</span><span>${child.niveau}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">GENRE:</span><span>${genre}</span></div>
+      </div>`
+    }).join('')
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Re\u00e7u \u2014 ${fd.nom}</title>
+  <style>
+    @page { size: 57mm auto; margin: 2mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; font-size: 9px; line-height: 1.45; color: #000; width: 53mm; padding: 3mm 2mm; }
+  </style>
+</head>
+<body>
+  <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:4px;margin-bottom:5px;">
+    <div style="font-size:12px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
+    <div style="font-size:7.5px;margin-top:2px;">${dateStr} ${timeStr}</div>
+  </div>
+  <div style="text-align:center;font-weight:bold;font-size:9px;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">
+    \u2713 Commande Confirm\u00e9e
+  </div>
+  <div style="border-top:1px dashed #000;padding-top:4px;margin-top:2px;">
+    <div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">\u2014\u2014 D\u00c9TAILS \u2014\u2014</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">CLIENT:</span><span style="text-align:right;word-break:break-word;flex:1;">${fd.nom}</span></div>
+    ${fd.telephone ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">T\u00c9L:</span><span>${fd.telephone}</span></div>` : ''}
+    ${fd.couverture_demandee ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">COUVERTURE:</span><span>OUI</span></div>` : ''}
+    ${fd.avance && fd.avance !== '0' ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">AVANCE:</span><span>${fd.avance} DHS</span></div>` : ''}
+    ${childrenRows}
+    ${fd.note ? `<div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;"><div style="font-weight:bold;">NOTE:</div><div style="word-break:break-word;text-transform:uppercase;margin-top:1px;">${fd.note}</div></div>` : ''}
+  </div>
+  <div style="border-top:2px solid #000;margin-top:5px;padding-top:4px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:7.5px;letter-spacing:0.5px;">
+    Merci pour votre confiance
+  </div>
+</body>
+</html>`
+  }
+
   const handlePrint = () => {
-    try {
-      const printSection = document.getElementById('print-section')
-      if (!printSection) {
-        alert('Erreur: Section d\'impression non trouvée')
-        return
-      }
-      setTimeout(() => {
-        try { window.print() } catch { alert('Erreur lors de l\'impression. Veuillez utiliser Ctrl+P pour imprimer manuellement.') }
-      }, 100)
-    } catch {
-      alert('Erreur lors de la préparation de l\'impression.')
+    const html = buildReceiptHTML()
+    if (!html) return
+    const printWindow = window.open('', '_blank', 'width=300,height=600')
+    if (!printWindow) {
+      alert('Veuillez autoriser les pop-ups pour imprimer.')
+      return
     }
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
   }
 
   if (submissionResult?.success) {
     const R = submissionResult
-    const now = new Date(Date.now() - 60 * 60 * 1000)
-    const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     const multiChild = (R.formData?.childrenWithCodes?.length ?? 0) > 1
 
-    const row = (label: string, value: React.ReactNode) => (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2px' }}>
-        <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginRight: '4px' }}>{label}</span>
-        <span style={{ textAlign: 'right', wordBreak: 'break-word', flex: 1 }}>{value}</span>
-      </div>
-    )
-
     return (
-      <div className="max-w-xs mx-auto pt-8">
-        <style dangerouslySetInnerHTML={{ __html: `
-          @media print {
-            @page { size: 57mm auto; margin: 2mm; }
-            body > * { display: none !important; }
-            #print-root { display: block !important; }
-          }
-          #print-root { display: block; }
-        ` }} />
-
-        <div id="print-root">
-          <div
-            id="print-section"
-            style={{
-              fontFamily: 'monospace',
-              fontSize: '9px',
-              lineHeight: '1.45',
-              color: '#000',
-              backgroundColor: '#fff',
-              width: '53mm',
-              padding: '3mm 2mm',
-              boxSizing: 'border-box',
-            }}
-          >
-            {/* Header */}
-            <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '4px', marginBottom: '5px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>ESPACE BEN ALI</div>
-              <div style={{ fontSize: '7.5px', marginTop: '2px' }}>{dateStr}</div>
-              <div style={{ fontSize: '7.5px' }}>{timeStr}</div>
-            </div>
-
-            {/* Confirmed */}
-            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase', marginBottom: '5px', letterSpacing: '0.5px' }}>
-              ✓ Commande Confirmée
-            </div>
-
-            {/* Code boxes */}
-            {R.formData?.childrenWithCodes?.map((child, index) => (
-              <div key={index} style={{ border: '1px solid #000', textAlign: 'center', padding: '4px 2px', marginBottom: '4px' }}>
-                <div style={{ fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
-                  {multiChild ? `ENFANT ${index + 1} — ` : ''}CODE RÉFÉRENCE
-                </div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', letterSpacing: '5px', lineHeight: '1.2' }}>
-                  {child.code}
-                </div>
-                {multiChild && (
-                  <div style={{ fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
-                    {child.ecole} — {child.niveau}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Details */}
-            <div style={{ borderTop: '1px dashed #000', paddingTop: '4px', marginTop: '2px' }}>
-              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '7.5px', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>
-                ── DÉTAILS ──
-              </div>
-
-              {row('CLIENT:', R.formData?.nom)}
-              {R.formData?.telephone && row('TÉL:', R.formData.telephone)}
-
-              {R.formData?.childrenWithCodes?.map((child, index) => (
-                <div key={index} style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
-                  {multiChild && (
-                    <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '7.5px', textTransform: 'uppercase', marginBottom: '2px' }}>
-                      — ENFANT {index + 1} —
-                    </div>
-                  )}
-                  {row('ÉCOLE:', child.ecole)}
-                  {row('NIVEAU:', child.niveau)}
-                  {row('GENRE:', R.formData?.children[index]?.genre === 'fille' ? 'Fille' : R.formData?.children[index]?.genre === 'garcon' ? 'Garçon' : '-')}
-                </div>
-              ))}
-
-              {R.formData?.couverture_demandee && (
-                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
-                  {row('COUVERTURE:', 'OUI')}
-                </div>
-              )}
-
-              {R.formData?.avance && R.formData.avance !== '0' && (
-                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
-                  {row('AVANCE:', `${R.formData.avance} DHS`)}
-                </div>
-              )}
-
-              {R.formData?.note && (
-                <div style={{ borderTop: '1px dashed #aaa', paddingTop: '3px', marginTop: '3px' }}>
-                  <div style={{ fontWeight: 'bold' }}>NOTE:</div>
-                  <div style={{ wordBreak: 'break-word', textTransform: 'uppercase', marginTop: '1px' }}>{R.formData.note}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div style={{ borderTop: '2px solid #000', marginTop: '5px', paddingTop: '4px', textAlign: 'center', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '7.5px', letterSpacing: '0.5px' }}>
-              Merci pour votre confiance
-            </div>
+      <div className="max-w-md mx-auto pt-8 px-4">
+        {/* Success icon */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-200">
+            <Check className="h-8 w-8 text-green-600" />
           </div>
+          <h2 className="text-2xl font-heading font-bold text-espresso-900 mb-1">Commande Confirmée</h2>
+          <p className="text-espresso-600 text-sm font-medium">Votre commande a été enregistrée avec succès.</p>
         </div>
 
-        <div className="mb-4 mt-6">
-          <button
-            onClick={handlePrint}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-amber-600 text-white rounded-xl font-bold tracking-wide hover:bg-amber-700 transition-colors shadow-md text-sm uppercase"
-          >
-            <Printer className="h-5 w-5" />
-            <span>Imprimer le reçu</span>
-          </button>
+        {/* Code cards */}
+        <div className="space-y-3 mb-6">
+          {R.formData?.childrenWithCodes?.map((child, index) => (
+            <div key={index} className="bg-white border-2 border-espresso-900 rounded-2xl p-5 text-center shadow-book">
+              <p className="text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">
+                {multiChild ? `Enfant ${index + 1} — ` : ''}Code Référence
+              </p>
+              <p className="text-4xl font-mono font-bold tracking-widest text-espresso-900 my-2">
+                {child.code}
+              </p>
+              {multiChild && (
+                <p className="text-xs font-bold text-espresso-600 uppercase">
+                  {child.ecole} — {child.niveau}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
 
-        <div className="print:hidden flex justify-center space-x-6 text-sm font-semibold uppercase tracking-wide">
-          <button
-            onClick={() => setSubmissionResult(null)}
-            className="text-espresso-600 hover:text-amber-700 transition-colors"
-          >
+        {/* Summary */}
+        <div className="bg-parchment-100 rounded-2xl p-5 mb-6 border border-parchment-300 text-sm space-y-2">
+          <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Client</span><span className="font-medium text-espresso-900">{R.formData?.nom}</span></div>
+          {R.formData?.telephone && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Téléphone</span><span className="font-medium">{R.formData.telephone}</span></div>}
+          {R.formData?.avance && R.formData.avance !== '0' && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Avance</span><span className="font-medium text-green-700">{R.formData.avance} DHS</span></div>}
+          {R.formData?.couverture_demandee && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Couverture</span><span className="font-medium">Oui</span></div>}
+        </div>
+
+        {/* Print button */}
+        <button
+          onClick={handlePrint}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-3.5 bg-amber-600 text-white rounded-xl font-bold tracking-wide hover:bg-amber-700 transition-colors shadow-md text-sm uppercase mb-4"
+        >
+          <Printer className="h-5 w-5" />
+          <span>Imprimer le reçu</span>
+        </button>
+
+        <div className="flex justify-center space-x-6 text-sm font-semibold uppercase tracking-wide">
+          <button onClick={() => setSubmissionResult(null)} className="text-espresso-600 hover:text-amber-700 transition-colors">
             Nouvelle commande
           </button>
-          <button
-            onClick={handleBackToHome}
-            className="text-espresso-600 hover:text-amber-700 transition-colors"
-          >
+          <button onClick={handleBackToHome} className="text-espresso-600 hover:text-amber-700 transition-colors">
             Retour accueil
           </button>
         </div>
