@@ -322,7 +322,7 @@ function ClientForm({ onNavigate }: ClientFormProps) {
           <div className="mb-2">
             <div className="mb-2 text-center border-b border-dashed border-gray-400 pb-2">
               <h1 className="text-xl font-heading font-bold text-black mb-1">
-                LIBRAIRIE 2B
+                ESPACE BEN ALI
               </h1>
               <div className="text-xs text-gray-800 leading-tight uppercase">
                 <p>
