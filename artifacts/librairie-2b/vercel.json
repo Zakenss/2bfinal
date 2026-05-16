@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @workspace/librairie-2b build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
