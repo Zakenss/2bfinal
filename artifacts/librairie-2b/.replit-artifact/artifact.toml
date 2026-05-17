@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Espace Ben Ali"
+version = "1.0.0"
+id = "artifacts/librairie-2b"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19962
+
+[services.development]
+run = "pnpm --filter @workspace/librairie-2b run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/librairie-2b", "run", "build" ]
+publicDir = "artifacts/librairie-2b/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19962"
+BASE_PATH = "/"
