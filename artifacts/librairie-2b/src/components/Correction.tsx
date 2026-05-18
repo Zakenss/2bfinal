@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { CreditCard as Edit, Search, Plus, Trash2, Printer } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
+import { buildReceiptHTML } from '../lib/receiptBuilder'
 
 interface CorrectionProps {
   onNavigate: (page: 'espace-client') => void
@@ -32,72 +33,6 @@ interface EditFormData {
   couverture_demandee: boolean
 }
 
-function buildReceiptHTML(order: GroupedOrder): string {
-  const date = new Date(order.created_at).toLocaleString('fr-FR', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  })
-  const multiChild = order.children.length > 1
-
-  const childrenRows = order.children
-    .map((child, i) => `
-      <div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;">
-        ${multiChild ? `<div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:2px;">— ENFANT ${i + 1} —</div>` : ''}
-        <div style="border:1px solid #000;text-align:center;padding:4px 2px;margin-bottom:3px;">
-          <div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-bottom:2px;">${multiChild ? `ENFANT ${i + 1} — ` : ''}CODE R&Eacute;F&Eacute;RENCE</div>
-          <div style="font-size:20px;font-weight:bold;letter-spacing:5px;line-height:1.2;">${child.code}</div>
-          ${multiChild ? `<div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-top:2px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">&#201;COLE:</span><span style="text-align:right;word-break:break-word;flex:1;">${child.ecole}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">NIVEAU:</span><span>${child.niveau}</span></div>
-        ${child.genre ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">GENRE:</span><span>${child.genre}</span></div>` : ''}
-      </div>`)
-    .join('')
-
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Re&ccedil;u &mdash; ${order.nom}</title>
-  <style>
-    @page { size: 57mm auto; margin: 2mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: monospace;
-      font-size: 9px;
-      line-height: 1.45;
-      color: #000;
-      width: 53mm;
-      padding: 3mm 2mm;
-    }
-  </style>
-</head>
-<body>
-  <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:4px;margin-bottom:5px;">
-    <div style="font-size:12px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
-    <div style="font-size:7.5px;margin-top:2px;">${date}</div>
-  </div>
-
-  <div style="text-align:center;font-weight:bold;font-size:9px;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">
-    Re&ccedil;u de commande
-  </div>
-
-  <div style="border-top:1px dashed #000;padding-top:4px;margin-top:2px;">
-    <div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">&mdash;&mdash; D&Eacute;TAILS &mdash;&mdash;</div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">CLIENT:</span><span style="text-align:right;word-break:break-word;flex:1;">${order.nom}</span></div>
-    ${order.telephone ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">T&Eacute;L:</span><span>${order.telephone}</span></div>` : ''}
-    ${order.avance ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">AVANCE:</span><span>${order.avance} DHS</span></div>` : ''}
-    ${order.couverture_demandee ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">COUVERTURE:</span><span>OUI</span></div>` : ''}
-    ${childrenRows}
-    ${order.note ? `<div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;"><div style="font-weight:bold;">NOTE:</div><div style="word-break:break-word;text-transform:uppercase;margin-top:1px;">${order.note}</div></div>` : ''}
-  </div>
-
-  <div style="border-top:2px solid #000;margin-top:5px;padding-top:4px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:7.5px;letter-spacing:0.5px;">
-    Merci de votre confiance
-  </div>
-</body>
-</html>`
-}
 
 function Correction({ onNavigate }: CorrectionProps) {
   const [groupedOrders, setGroupedOrders] = useState<GroupedOrder[]>([])
@@ -184,12 +119,26 @@ function Correction({ onNavigate }: CorrectionProps) {
   }, [])
 
   const handlePrintOrder = (order: GroupedOrder) => {
-    const printWindow = window.open('', '_blank', 'width=300,height=500')
+    const html = buildReceiptHTML({
+      nom: order.nom,
+      telephone: order.telephone || null,
+      avance: order.avance ?? null,
+      note: order.note || null,
+      couverture_demandee: order.couverture_demandee,
+      created_at: order.created_at,
+      children: order.children.map(c => ({
+        ecole: c.ecole ?? '',
+        niveau: c.niveau ?? '',
+        genre: c.genre ?? null,
+        code: c.code ?? '',
+      })),
+    })
+    const printWindow = window.open('', '_blank', 'width=320,height=600')
     if (!printWindow) {
       alert('Veuillez autoriser les pop-ups pour imprimer.')
       return
     }
-    printWindow.document.write(buildReceiptHTML(order))
+    printWindow.document.write(html)
     printWindow.document.close()
     printWindow.focus()
     printWindow.print()

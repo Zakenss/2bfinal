@@ -1,0 +1,47 @@
+Generate a thermal receipt for a bookstore order. The receipt is for a French-language bookstore called **LIBRAIRIE 2B**. Use the exact layout, spacing, and style described below — this is designed for a **75mm thermal printer** and must be compact and print-optimized.
+
+**Receipt structure (top to bottom):**
+
+1. **Header** — centered, bold store name `LIBRAIRIE 2B`, then date (e.g. `17 mai 2025`) and time (e.g. `14:32`) below it, small gray text
+2. **Small checkmark icon** (circle, centered)
+3. **"Commande Confirmée"** — small bold centered title
+4. **One box per child** (if multiple children, label each `Enfant 1:`, `Enfant 2:`, etc.; if only one, label it `Votre code de référence:`):
+   - Large monospace bold code (e.g. `AB12`) in blue
+   - If multiple children: school name and level below the code in small  text
+5. **"DÉTAILS" section** — gray background box, light top border, centered bold `DÉTAILS` header underlined:
+   - `Nom:` — customer name (right-aligned value)
+   - `Tél:` — phone number (right-aligned, only if provided)
+   - For each child, a separator line then centered bold `ENFANT` or `ENFANT 1`, `ENFANT 2`, etc., followed by:
+     - `École:` — school name (right-aligned)
+     - `Niveau:` — grade level (right-aligned)
+     - `Genre:` — `Fille` or `Garçon` (right-aligned)
+     - `Code:` — the reference code in bold monospace (right-aligned)
+   - If cover requested: separator line, `Couverture:` → `DEMANDÉE` (bold black)
+   - If advance payment: separator line, `Avance:` → `X DHS` (bold green)
+   - If note: separator line, `NOTE:` bold, then note text below it wrapping
+6. **Footer** — double top border line, centered small gray text: `Merci pour votre confiance!`
+
+**Styling rules:**
+- Everything uses `text-xs` (very small font) with `leading-tight` line height
+- The whole receipt has `p-1` padding, `bg-white`, no shadow, no rounded corners
+- All labels are left-aligned gray, all values are right-aligned and take remaining width (`flex justify-between`)
+- Values that can be long use `break-words` and `flex-1`
+- Codes use `font-mono`, `font-bold`, `text-lg`, `tracking-wider`, `text-blue-900`
+- The child boxes use `bg-blue-100 rounded p-1`
+- The details section uses `bg-gray-50 rounded p-1`
+- Section separators are `border-t border-gray-300 pt-1 mt-1`
+- The footer uses `border-t-2 border-gray-400`
+- No emojis, no icons in the printable area (the checkmark is purely decorative and can be omitted for plain text)
+- The receipt width is constrained to `max-w-md` on screen but prints at full thermal paper width
+
+**Data fields to populate:**
+- Store name: `LIBRAIRIE 2B`
+- Date/time:  British summer time
+- Customer name (`nom`)
+- Phone (`telephone`) — optional
+- One or more children, each with: `ecole` (school), `niveau` (grade level: PS/MS/GS/CP/CE1/CE2/CM1/CM2/CE6–CE9/TC/1BAC/2BAC), `genre` (fille/garcon), `code` (4-char alphanumeric like `AB12`)
+- `couverture_demandee` (boolean) — whether book cover was requested
+- `avance` (number, in DHS) — advance payment, only show if non-zero
+- `note` (string) — optional free text note
+
+---
