@@ -1,14 +1,6 @@
 import React, { useState } from 'react'
-import { Search, Package, Check, X, LogIn, Clock } from 'lucide-react'
+import { Search, Package, Check, Clock, LogIn, AlertCircle, MapPin, Layers, User, Phone, Mail, Calendar, School } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
-
-interface EmployeeCredentials {
-  username: string
-  password: string
-  name: string
-}
-
-const EMPLOYEE_CREDENTIALS: EmployeeCredentials[] = []
 
 function EmployeeSearch() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -21,17 +13,22 @@ function EmployeeSearch() {
   const [isSearching, setIsSearching] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
   const [updateForm, setUpdateForm] = useState({
     liste_prete: false,
     rangee: '',
-    niveau_rangement: '1',
+    niveau_rangement: '',
   })
+
+  const canSubmit =
+    updateForm.liste_prete === true &&
+    updateForm.rangee !== '' &&
+    updateForm.niveau_rangement !== ''
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoggingIn(true)
     setAuthError('')
-
     try {
       const { data, error } = await supabase
         .from('users')
@@ -39,19 +36,16 @@ function EmployeeSearch() {
         .eq('username', authForm.username.trim())
         .eq('space', 'espace_adjoint')
         .maybeSingle()
-
       if (error) throw error
-
       if (data && data.active && data.password === authForm.password) {
         setIsAuthenticated(true)
         setCurrentEmployee(data.username)
       } else {
-        setAuthError('Nom d\'utilisateur ou mot de passe incorrect')
+        setAuthError("Nom d'utilisateur ou mot de passe incorrect")
       }
     } catch {
       setAuthError('Erreur de connexion. Veuillez réessayer.')
     }
-
     setIsLoggingIn(false)
   }
 
@@ -62,27 +56,22 @@ function EmployeeSearch() {
     setSearchCode('')
     setBookList(null)
     setNotFound(false)
-  }
-
-  const handleBackToHome = () => {
-    window.location.reload()
+    setUpdateSuccess(false)
   }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchCode.length !== 4) return
-
     setIsSearching(true)
     setNotFound(false)
     setBookList(null)
-
+    setUpdateSuccess(false)
     try {
       const { data, error } = await supabase
         .from('students')
         .select('*')
         .eq('code', searchCode)
         .single()
-
       if (error || !data) {
         setNotFound(true)
       } else {
@@ -90,11 +79,10 @@ function EmployeeSearch() {
         setUpdateForm({
           liste_prete: data.liste_prete ?? false,
           rangee: data.rangee || '',
-          niveau_rangement: data.niveau_rangement || '1',
+          niveau_rangement: data.niveau_rangement || '',
         })
       }
-    } catch (error) {
-      console.error('Error searching:', error)
+    } catch {
       setNotFound(true)
     } finally {
       setIsSearching(false)
@@ -102,10 +90,9 @@ function EmployeeSearch() {
   }
 
   const handleUpdate = async () => {
-    if (!bookList) return
-
+    if (!bookList || !canSubmit) return
     setIsUpdating(true)
-
+    setUpdateSuccess(false)
     try {
       const { error } = await supabase
         .from('students')
@@ -117,20 +104,17 @@ function EmployeeSearch() {
           modified_at: new Date().toISOString(),
         })
         .eq('id', bookList.id)
-
       if (!error) {
         const { data } = await supabase
           .from('students')
           .select('*')
           .eq('id', bookList.id)
           .single()
-
-        if (data) {
-          setBookList(data)
-        }
+        if (data) setBookList(data)
+        setUpdateSuccess(true)
       }
-    } catch (error) {
-      console.error('Error updating:', error)
+    } catch (err) {
+      console.error('Error updating:', err)
     } finally {
       setIsUpdating(false)
     }
@@ -138,81 +122,65 @@ function EmployeeSearch() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]">
-        <div className="absolute inset-0 bg-gradient-to-b from-parchment-100/30 to-parchment-200/90 pointer-events-none" />
-        <div className="max-w-md w-full relative z-10">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-espresso-900 rounded-full mb-6 shadow-lg border-4 border-parchment-100">
-              <Search className="h-10 w-10 text-parchment-100" />
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-parchment-100">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-espresso-900 rounded-2xl mb-5 shadow-lg">
+              <Search className="h-8 w-8 text-parchment-100" />
             </div>
-            <h1 className="text-4xl font-heading font-bold text-espresso-900 mb-3">
-              Espace Collaborateur
-            </h1>
-            <p className="text-base text-espresso-600 font-medium">
-              Connectez-vous pour gérer les commandes
-            </p>
+            <h1 className="text-3xl font-heading font-bold text-espresso-900 mb-2">Espace Collaborateur</h1>
+            <p className="text-espresso-600 text-sm font-medium">Connectez-vous pour gérer les commandes</p>
           </div>
 
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-book p-8 md:p-10 border border-parchment-300">
-            <form onSubmit={handleLogin} className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-book p-8 border border-parchment-200">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label htmlFor="username" className="block text-sm font-bold tracking-wide text-espresso-800 uppercase mb-2">
+                <label className="block text-xs font-bold tracking-widest text-espresso-500 uppercase mb-2">
                   Nom d'utilisateur
                 </label>
                 <input
                   type="text"
-                  id="username"
                   required
                   value={authForm.username}
                   onChange={(e) => setAuthForm(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 placeholder-espresso-300 font-medium"
+                  className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
                   placeholder="votre.nom"
                 />
               </div>
-
               <div>
-                <label htmlFor="password" className="block text-sm font-bold tracking-wide text-espresso-800 uppercase mb-2">
+                <label className="block text-xs font-bold tracking-widest text-espresso-500 uppercase mb-2">
                   Mot de passe
                 </label>
                 <input
                   type="password"
-                  id="password"
                   required
                   value={authForm.password}
                   onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 placeholder-espresso-300 font-medium"
+                  className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
                   placeholder="••••••••"
                 />
               </div>
 
               {authError && (
-                <div className="bg-terracotta-500/10 border border-terracotta-500/20 rounded-xl p-4">
-                  <p className="text-terracotta-700 text-sm font-medium">{authError}</p>
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
+                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-red-700 text-sm">{authError}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full bg-espresso-900 text-white py-4 px-6 rounded-xl font-bold tracking-wide hover:bg-espresso-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-md mt-2 uppercase text-sm"
+                className="w-full bg-espresso-900 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider hover:bg-espresso-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md text-sm mt-2"
               >
-                {isLoggingIn ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  <>
-                    <LogIn className="h-5 w-5" />
-                    <span>Se connecter</span>
-                  </>
-                )}
+                {isLoggingIn
+                  ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                  : <><LogIn className="h-4 w-4" /> Se connecter</>}
               </button>
             </form>
-            
-            <div className="mt-8 text-center pt-6 border-t border-parchment-200">
-              <button
-                onClick={handleBackToHome}
-                className="text-espresso-500 hover:text-amber-700 font-semibold text-sm transition-colors"
-              >
-                Retour à l'accueil
+            <div className="mt-6 text-center border-t border-parchment-200 pt-5">
+              <button onClick={() => window.location.reload()} className="text-espresso-500 hover:text-amber-700 text-sm font-semibold transition-colors">
+                ← Retour à l'accueil
               </button>
             </div>
           </div>
@@ -222,212 +190,292 @@ function EmployeeSearch() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white rounded-xl shadow-sm border border-parchment-300 p-4 mb-8">
-        <div className="text-sm text-espresso-700 font-medium mb-4 sm:mb-0">
-          Connecté: <span className="font-bold text-espresso-900 ml-1">{currentEmployee}</span>
+    <div className="max-w-2xl mx-auto px-4 pb-16">
+
+      {/* Top bar */}
+      <div className="flex items-center justify-between py-4 mb-8 border-b border-parchment-200">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-espresso-900 rounded-lg flex items-center justify-center">
+            <User className="h-4 w-4 text-parchment-100" />
+          </div>
+          <div>
+            <p className="text-xs text-espresso-500 font-medium uppercase tracking-widest">Connecté</p>
+            <p className="text-sm font-bold text-espresso-900">{currentEmployee}</p>
+          </div>
         </div>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-parchment-200 text-espresso-800 rounded-lg font-bold tracking-wide hover:bg-parchment-300 transition-colors text-xs uppercase"
+          className="px-4 py-2 bg-parchment-200 text-espresso-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-parchment-300 transition-colors"
         >
           Se déconnecter
         </button>
       </div>
 
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
-          <Search className="h-8 w-8 text-parchment-100" />
+      {/* Page title */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-espresso-900 rounded-2xl mb-4 shadow-md">
+          <Search className="h-7 w-7 text-parchment-100" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-heading font-bold text-espresso-900 mb-4">
-          Recherche Collaborateur
-        </h1>
-        <p className="text-lg text-espresso-600 font-medium">
-          Entrez le code à 4 caractères pour mettre à jour une commande.
-        </p>
+        <h1 className="text-3xl font-heading font-bold text-espresso-900 mb-1">Recherche Commande</h1>
+        <p className="text-espresso-500 text-sm font-medium">Entrez le code à 4 caractères</p>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-8 md:p-10 mb-8">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={searchCode}
-              onChange={(e) => {
-                const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
-                setSearchCode(value)
-              }}
-              placeholder="Ex: AB12"
-              className="w-full px-4 py-4 text-3xl text-center border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors tracking-[0.2em] font-mono uppercase bg-parchment-50 text-espresso-900 font-bold placeholder-parchment-300"
-              maxLength={4}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={searchCode.length !== 4 || isSearching}
-            className="px-8 py-4 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base w-full sm:w-auto shadow-md"
-          >
-            {isSearching ? 'Recherche...' : 'Rechercher'}
-          </button>
-        </form>
-      </div>
+      {/* Search box */}
+      <form onSubmit={handleSearch} className="flex gap-3 mb-8">
+        <input
+          type="text"
+          value={searchCode}
+          onChange={(e) => {
+            setSearchCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))
+            setNotFound(false)
+          }}
+          placeholder="EX: AB12"
+          maxLength={4}
+          className="flex-1 px-5 py-4 text-2xl text-center border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors tracking-[0.3em] font-mono font-bold uppercase bg-white text-espresso-900 placeholder-parchment-300 shadow-sm"
+        />
+        <button
+          type="submit"
+          disabled={searchCode.length !== 4 || isSearching}
+          className="px-6 py-4 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-md whitespace-nowrap"
+        >
+          {isSearching ? 'Recherche…' : 'Rechercher'}
+        </button>
+      </form>
 
+      {/* Not found */}
       {notFound && (
-        <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-10 text-center">
-          <Search className="h-12 w-12 text-terracotta-500 mx-auto mb-4 opacity-50" />
-          <h3 className="text-2xl font-heading font-bold text-espresso-900 mb-2">
-            Code introuvable
-          </h3>
-          <p className="text-espresso-600">
-            Aucune commande ne correspond à ce code. Vérifiez la saisie.
-          </p>
+        <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm p-10 text-center">
+          <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-7 w-7 text-red-400" />
+          </div>
+          <h3 className="text-lg font-bold text-espresso-900 mb-1">Code introuvable</h3>
+          <p className="text-espresso-500 text-sm">Aucune commande ne correspond à <span className="font-mono font-bold">{searchCode}</span>. Vérifiez la saisie.</p>
         </div>
       )}
 
+      {/* Order card */}
       {bookList && (
-        <div className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
-          <div className="bg-parchment-200 border-b border-parchment-300 px-8 py-6 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Package className="h-6 w-6 text-amber-700" />
-              <h2 className="text-2xl font-heading font-bold text-espresso-900">
-                Commande <span className="font-mono tracking-wider ml-1">#{bookList.code}</span>
-              </h2>
-            </div>
-            <div className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest border ${
-              bookList.liste_prete ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'
-            }`}>
-              {bookList.liste_prete ? 'Prête' : 'En attente'}
-            </div>
-          </div>
+        <div className="space-y-4">
 
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-10">
-              <div>
-                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Client</span>
-                <p className="text-lg font-bold text-espresso-900">{bookList.nom}</p>
-              </div>
-              <div>
-                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Date</span>
-                <p className="text-lg font-medium text-espresso-900">
-                  {new Date(bookList.created_at ?? '').toLocaleDateString('fr-FR')}
-                </p>
-              </div>
-              <div>
-                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">École</span>
-                <p className="text-lg font-medium text-espresso-900">{bookList.ecole}</p>
-              </div>
-              <div>
-                <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Niveau</span>
-                <p className="text-lg font-medium text-espresso-900">{bookList.niveau}</p>
-              </div>
-              {(bookList.email || bookList.telephone) && (
-                <div className="md:col-span-2 border-t border-parchment-200 pt-4 mt-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {bookList.email && (
-                      <div>
-                        <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Email</span>
-                        <p className="text-base text-espresso-800">{bookList.email}</p>
-                      </div>
-                    )}
-                    {bookList.telephone && (
-                      <div>
-                        <span className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-1">Téléphone</span>
-                        <p className="text-base text-espresso-800">{bookList.telephone}</p>
-                      </div>
-                    )}
-                  </div>
+          {/* Order header */}
+          <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${bookList.liste_prete ? 'border-green-200' : 'border-amber-200'}`}>
+            <div className={`flex items-center justify-between px-6 py-4 ${bookList.liste_prete ? 'bg-green-50' : 'bg-amber-50'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${bookList.liste_prete ? 'bg-green-600' : 'bg-amber-500'}`}>
+                  <Package className="h-5 w-5 text-white" />
                 </div>
-              )}
-            </div>
-
-            <div className="bg-parchment-50 rounded-2xl p-6 border border-parchment-200">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-800 mb-6 flex items-center border-b border-parchment-200 pb-3">
-                <Check className="h-4 w-4 mr-2 text-amber-600" />
-                Mise à jour du statut
-              </h3>
-
-              <div className="space-y-8">
                 <div>
-                  <label className="block text-sm font-bold text-espresso-800 mb-3">
-                    La liste est-elle prête ?
-                  </label>
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: true }))}
-                      className={`flex-1 flex items-center justify-center space-x-2 py-4 rounded-xl font-bold uppercase tracking-wide transition-all border-2 ${
-                        updateForm.liste_prete
-                          ? 'bg-amber-600 text-white border-amber-600 shadow-md'
-                          : 'bg-white text-espresso-600 border-parchment-300 hover:border-amber-400'
-                      }`}
-                    >
-                      <Check className="h-5 w-5" />
-                      <span>Oui, prête</span>
-                    </button>
-                    <button
-                      onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: false }))}
-                      className={`flex-1 flex items-center justify-center space-x-2 py-4 rounded-xl font-bold uppercase tracking-wide transition-all border-2 ${
-                        !updateForm.liste_prete
-                          ? 'bg-espresso-800 text-white border-espresso-800 shadow-md'
-                          : 'bg-white text-espresso-600 border-parchment-300 hover:border-espresso-400'
-                      }`}
-                    >
-                      <Clock className="h-5 w-5" />
-                      <span>En attente</span>
-                    </button>
+                  <p className="text-xs font-bold uppercase tracking-widest text-espresso-500">Commande</p>
+                  <p className="text-lg font-mono font-black text-espresso-900 tracking-widest">#{bookList.code}</p>
+                </div>
+              </div>
+              <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                bookList.liste_prete
+                  ? 'bg-green-100 text-green-800 border-green-300'
+                  : 'bg-amber-100 text-amber-800 border-amber-300'
+              }`}>
+                {bookList.liste_prete ? '✓ Prête' : '⏳ En attente'}
+              </span>
+            </div>
+
+            {/* Order details */}
+            <div className="bg-white px-6 py-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">Client</p>
+                    <p className="text-sm font-bold text-espresso-900">{bookList.nom}</p>
                   </div>
                 </div>
-
-                {updateForm.liste_prete && (
-                  <div className="grid grid-cols-2 gap-6 p-5 bg-white rounded-xl border border-parchment-200 shadow-sm">
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">Date</p>
+                    <p className="text-sm font-medium text-espresso-900">
+                      {new Date(bookList.created_at ?? '').toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <School className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">École</p>
+                    <p className="text-sm font-medium text-espresso-900">{bookList.ecole}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Layers className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">Niveau</p>
+                    <p className="text-sm font-medium text-espresso-900">{bookList.niveau}</p>
+                  </div>
+                </div>
+                {bookList.telephone && (
+                  <div className="flex items-start gap-2">
+                    <Phone className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
                     <div>
-                      <label htmlFor="rangee" className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                        Rangée
-                      </label>
-                      <select
-                        id="rangee"
-                        value={updateForm.rangee}
-                        onChange={(e) => setUpdateForm(prev => ({ ...prev, rangee: e.target.value }))}
-                        className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-bold"
-                      >
-                        <option value="">-</option>
-                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(letter => (
-                          <option key={letter} value={letter}>{letter}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="niveau_rangement" className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                        Étagère
-                      </label>
-                      <select
-                        id="niveau_rangement"
-                        value={updateForm.niveau_rangement}
-                        onChange={(e) => setUpdateForm(prev => ({ ...prev, niveau_rangement: e.target.value }))}
-                        className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-bold"
-                      >
-                        {[1, 2, 3, 4, 5, 6].map(num => (
-                          <option key={num} value={num}>{num}</option>
-                        ))}
-                      </select>
+                      <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">Téléphone</p>
+                      <p className="text-sm font-medium text-espresso-900">{bookList.telephone}</p>
                     </div>
                   </div>
                 )}
-
-                <button
-                  onClick={handleUpdate}
-                  disabled={isUpdating}
-                  className="w-full bg-espresso-900 text-white py-4 px-6 rounded-xl font-bold uppercase tracking-wider hover:bg-espresso-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center space-x-2"
-                >
-                  {isUpdating ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <span>Mettre à jour le statut</span>
-                  )}
-                </button>
+                {bookList.email && (
+                  <div className="flex items-start gap-2 col-span-2">
+                    <Mail className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-espresso-400 uppercase tracking-widest mb-0.5">Email</p>
+                      <p className="text-sm font-medium text-espresso-900">{bookList.email}</p>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Location badge if already placed */}
+              {bookList.liste_prete && bookList.rangee && bookList.niveau_rangement && (
+                <div className="mt-4 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                  <MapPin className="h-4 w-4 text-green-600 shrink-0" />
+                  <p className="text-sm text-green-800 font-medium">
+                    Rangée <strong>{bookList.rangee}</strong> · Étagère <strong>{bookList.niveau_rangement}</strong>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Update form */}
+          <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm overflow-hidden">
+            <div className="bg-parchment-100 border-b border-parchment-200 px-6 py-4 flex items-center gap-2">
+              <Check className="h-4 w-4 text-amber-700" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-800">Mise à jour du statut</h3>
+            </div>
+
+            <div className="p-6 space-y-6">
+
+              {/* Liste prête toggle */}
+              <div>
+                <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-3">
+                  La liste est-elle prête ? <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: true }))}
+                    className={`flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all border-2 ${
+                      updateForm.liste_prete
+                        ? 'bg-green-600 text-white border-green-600 shadow-md'
+                        : 'bg-white text-espresso-500 border-parchment-300 hover:border-green-400 hover:text-green-700'
+                    }`}
+                  >
+                    <Check className="h-4 w-4" />
+                    Oui, prête
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUpdateForm(prev => ({ ...prev, liste_prete: false, rangee: '', niveau_rangement: '' }))}
+                    className={`flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all border-2 ${
+                      !updateForm.liste_prete
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-md'
+                        : 'bg-white text-espresso-500 border-parchment-300 hover:border-amber-400 hover:text-amber-700'
+                    }`}
+                  >
+                    <Clock className="h-4 w-4" />
+                    En attente
+                  </button>
+                </div>
+              </div>
+
+              {/* Rangée + Étagère — only shown when liste_prete = true */}
+              {updateForm.liste_prete && (
+                <div className="rounded-xl border-2 border-dashed border-parchment-300 bg-parchment-50 p-4 space-y-4">
+                  <p className="text-xs font-bold text-espresso-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-amber-600" />
+                    Emplacement de rangement <span className="text-red-500">*</span>
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-espresso-600 mb-2">
+                        Rangée <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={updateForm.rangee}
+                        onChange={(e) => setUpdateForm(prev => ({ ...prev, rangee: e.target.value }))}
+                        className={`w-full px-3 py-3 border-2 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-white text-espresso-900 font-bold text-sm ${
+                          updateForm.rangee === '' ? 'border-red-300 bg-red-50' : 'border-parchment-300'
+                        }`}
+                      >
+                        <option value="">— Choisir —</option>
+                        {['A','B','C','D','E','F','G','H'].map(l => (
+                          <option key={l} value={l}>{l}</option>
+                        ))}
+                      </select>
+                      {updateForm.rangee === '' && (
+                        <p className="text-red-500 text-xs mt-1 font-medium">Requis</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-espresso-600 mb-2">
+                        Étagère <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={updateForm.niveau_rangement}
+                        onChange={(e) => setUpdateForm(prev => ({ ...prev, niveau_rangement: e.target.value }))}
+                        className={`w-full px-3 py-3 border-2 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-white text-espresso-900 font-bold text-sm ${
+                          updateForm.niveau_rangement === '' ? 'border-red-300 bg-red-50' : 'border-parchment-300'
+                        }`}
+                      >
+                        <option value="">— Choisir —</option>
+                        {[1,2,3,4,5,6].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                      {updateForm.niveau_rangement === '' && (
+                        <p className="text-red-500 text-xs mt-1 font-medium">Requis</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Validation hint */}
+              {!canSubmit && (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-800 font-medium leading-snug">
+                    {!updateForm.liste_prete
+                      ? 'Sélectionnez "Oui, prête" pour activer la mise à jour — puis choisissez la rangée et l\'étagère.'
+                      : 'Choisissez la rangée et l\'étagère avant de confirmer.'}
+                  </p>
+                </div>
+              )}
+
+              {/* Success banner */}
+              {updateSuccess && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  <Check className="h-4 w-4 text-green-600 shrink-0" />
+                  <p className="text-sm text-green-800 font-semibold">Statut mis à jour avec succès !</p>
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                onClick={handleUpdate}
+                disabled={isUpdating || !canSubmit}
+                className={`w-full py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition-all shadow-md flex items-center justify-center gap-2 ${
+                  canSubmit
+                    ? 'bg-espresso-900 text-white hover:bg-espresso-800 cursor-pointer'
+                    : 'bg-parchment-300 text-espresso-400 cursor-not-allowed shadow-none'
+                }`}
+              >
+                {isUpdating
+                  ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                  : <><Check className="h-4 w-4" /> Confirmer la mise à jour</>}
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
     </div>
