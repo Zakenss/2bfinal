@@ -15,6 +15,23 @@ export interface ReceiptData {
   created_at?: string
 }
 
+function sectionHeader(label: string): string {
+  return `
+  <div style="display:flex;align-items:center;margin:5px 0 3px;">
+    <div style="flex:1;height:1px;background:#bbb;"></div>
+    <div style="padding:0 5px;font-size:7px;font-weight:bold;letter-spacing:1.5px;color:#444;">${label}</div>
+    <div style="flex:1;height:1px;background:#bbb;"></div>
+  </div>`
+}
+
+function row(label: string, value: string, valueStyle = ''): string {
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:8.5px;">
+    <span style="color:#666;white-space:nowrap;">${label}</span>
+    <span style="text-align:right;word-break:break-word;flex:1;margin-left:6px;font-weight:600;${valueStyle}">${value}</span>
+  </div>`
+}
+
 export function buildReceiptHTML(data: ReceiptData): string {
   const baseDate = data.created_at ? new Date(data.created_at) : new Date()
   const dateStr = baseDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -24,61 +41,37 @@ export function buildReceiptHTML(data: ReceiptData): string {
   const avanceNum = typeof data.avance === 'string' ? parseFloat(data.avance) : (data.avance ?? 0)
 
   const childBoxes = data.children.map((child, i) => {
-    const label = multiChild ? `Enfant ${i + 1} :` : 'Votre code de r&eacute;f&eacute;rence :'
+    const label = multiChild ? `ENFANT ${i + 1}` : 'CODE DE R&Eacute;F&Eacute;RENCE'
     return `
-    <div style="margin-bottom:5px;">
-      <div style="font-size:8px;color:#6b7280;margin-bottom:2px;">${label}</div>
-      <div style="background:#dbeafe;border-radius:3px;padding:4px 3px;text-align:center;">
-        <div style="font-family:monospace;font-weight:bold;font-size:20px;letter-spacing:6px;color:#1e3a8a;line-height:1.2;">${child.code}</div>
-        ${multiChild ? `<div style="font-size:7.5px;color:#374151;margin-top:2px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
-      </div>
+    <div style="border:1.5px solid #222;margin:5px 0;padding:5px 4px;text-align:center;">
+      <div style="font-size:6.5px;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:3px;">${label}</div>
+      <div style="font-family:'Courier New',Courier,monospace;font-size:24px;font-weight:900;letter-spacing:8px;line-height:1;color:#111;">${child.code}</div>
+      ${multiChild ? `<div style="font-size:7px;color:#555;margin-top:3px;letter-spacing:0.5px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
     </div>`
   }).join('')
 
   const childDetails = data.children.map((child, i) => {
     const genre = child.genre === 'fille' ? 'Fille' : child.genre === 'garcon' ? 'Gar\u00e7on' : (child.genre || '\u2014')
-    const sectionLabel = multiChild ? `ENFANT ${i + 1}` : 'ENFANT'
+    const label = multiChild ? `ENFANT ${i + 1}` : 'ENFANT'
     return `
-    <div style="border-top:1px solid #d1d5db;padding-top:3px;margin-top:3px;">
-      <div style="text-align:center;font-weight:bold;font-size:8.5px;margin-bottom:3px;">${sectionLabel}</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-        <span style="color:#6b7280;white-space:nowrap;">&#201;cole :</span>
-        <span style="text-align:right;word-break:break-word;flex:1;margin-left:4px;">${child.ecole}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-        <span style="color:#6b7280;">Niveau :</span>
-        <span style="margin-left:4px;">${child.niveau}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-        <span style="color:#6b7280;">Genre :</span>
-        <span style="margin-left:4px;">${genre}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-        <span style="color:#6b7280;">Code :</span>
-        <span style="font-family:monospace;font-weight:bold;letter-spacing:2px;margin-left:4px;">${child.code}</span>
-      </div>
-    </div>`
+    ${sectionHeader(label)}
+    ${row('\u00c9cole', child.ecole)}
+    ${row('Niveau', child.niveau)}
+    ${row('Genre', genre)}
+    ${row('Code', child.code, "font-family:'Courier New',Courier,monospace;letter-spacing:2px;")}`
   }).join('')
 
-  const couvertureRow = data.couverture_demandee
-    ? `<div style="border-top:1px solid #d1d5db;padding-top:3px;margin-top:3px;display:flex;justify-content:space-between;">
-        <span style="color:#6b7280;">Couverture :</span>
-        <span style="font-weight:bold;">DEMAND&Eacute;E</span>
-       </div>`
+  const couvertureSection = data.couverture_demandee
+    ? `${sectionHeader('COUVERTURE')}${row('Couverture', 'DEMAND\u00c9E', 'font-weight:bold;')}`
     : ''
 
-  const avanceRow = avanceNum && avanceNum > 0
-    ? `<div style="border-top:1px solid #d1d5db;padding-top:3px;margin-top:3px;display:flex;justify-content:space-between;">
-        <span style="color:#6b7280;">Avance :</span>
-        <span style="font-weight:bold;color:#16a34a;">${avanceNum} DHS</span>
-       </div>`
+  const avanceSection = avanceNum && avanceNum > 0
+    ? `${sectionHeader('AVANCE')}${row('Avance', `${avanceNum} DHS`, 'font-weight:bold;color:#1a7a3c;')}`
     : ''
 
-  const noteRow = data.note
-    ? `<div style="border-top:1px solid #d1d5db;padding-top:3px;margin-top:3px;">
-        <div style="font-weight:bold;margin-bottom:2px;">NOTE :</div>
-        <div style="word-break:break-word;">${data.note}</div>
-       </div>`
+  const noteSection = data.note
+    ? `${sectionHeader('NOTE')}
+    <div style="font-size:8px;color:#333;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
     : ''
 
   return `<!DOCTYPE html>
@@ -87,61 +80,59 @@ export function buildReceiptHTML(data: ReceiptData): string {
   <meta charset="UTF-8" />
   <title>Re&ccedil;u &mdash; ${data.nom}</title>
   <style>
-    @page { size: 75mm auto; margin: 2mm; }
+    @page { size: 75mm auto; margin: 2mm 3mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Arial, sans-serif;
-      font-size: 9px;
-      line-height: 1.25;
-      color: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5px;
+      line-height: 1.3;
+      color: #111;
       background: #fff;
-      width: 71mm;
-      padding: 2mm;
+      width: 69mm;
+      padding: 1mm 0;
     }
     @media print {
-      body { width: 100%; padding: 0; }
+      body { width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <div style="text-align:center;margin-bottom:5px;">
-    <div style="font-size:14px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
-    <div style="font-size:8px;color:#6b7280;margin-top:1px;">${dateStr} &bull; ${timeStr}</div>
+  <!-- ── HEADER ── -->
+  <div style="border-top:3px double #111;border-bottom:3px double #111;padding:5px 0;text-align:center;margin-bottom:6px;">
+    <div style="font-size:15px;font-weight:900;letter-spacing:3px;line-height:1;">ESPACE BEN ALI</div>
+    <div style="font-size:7px;letter-spacing:2.5px;color:#666;margin-top:2px;text-transform:uppercase;">Librairie Scolaire</div>
   </div>
 
-  <!-- Commande Confirmée -->
+  <!-- ── DATE / TIME ── -->
+  <div style="display:flex;justify-content:space-between;font-size:7.5px;color:#555;margin-bottom:5px;">
+    <span>${dateStr}</span>
+    <span>${timeStr}</span>
+  </div>
+
+  <!-- ── CONFIRMATION ── -->
   <div style="text-align:center;margin-bottom:6px;">
-    <span style="display:inline-block;width:16px;height:16px;border-radius:50%;border:1.5px solid #374151;line-height:15px;font-size:9px;margin-right:3px;">&#10003;</span>
-    <span style="font-size:9px;font-weight:bold;">Commande Confirm&eacute;e</span>
+    <div style="display:inline-block;border:1.5px solid #111;border-radius:2px;padding:3px 10px;">
+      <span style="font-size:8px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">&#10003;&nbsp; Commande Confirm&eacute;e</span>
+    </div>
   </div>
 
-  <!-- Child code boxes -->
+  <!-- ── CODE BOX(ES) ── -->
   ${childBoxes}
 
-  <!-- DÉTAILS section -->
-  <div style="background:#f9fafb;border-radius:3px;padding:4px;margin-top:5px;border-top:1px solid #e5e7eb;">
-    <div style="text-align:center;font-weight:bold;font-size:9px;text-decoration:underline;margin-bottom:4px;">D&Eacute;TAILS</div>
+  <!-- ── DETAILS SECTION ── -->
+  ${sectionHeader('D&Eacute;TAILS')}
+  ${row('Nom', data.nom)}
+  ${data.telephone ? row('T&eacute;l', data.telephone) : ''}
 
-    <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-      <span style="color:#6b7280;white-space:nowrap;">Nom :</span>
-      <span style="text-align:right;word-break:break-word;flex:1;margin-left:4px;">${data.nom}</span>
-    </div>
-    ${data.telephone ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-      <span style="color:#6b7280;">T&eacute;l :</span>
-      <span style="margin-left:4px;">${data.telephone}</span>
-    </div>` : ''}
+  ${childDetails}
+  ${couvertureSection}
+  ${avanceSection}
+  ${noteSection}
 
-    ${childDetails}
-    ${couvertureRow}
-    ${avanceRow}
-    ${noteRow}
-  </div>
-
-  <!-- Footer -->
-  <div style="border-top:2px solid #9ca3af;margin-top:6px;padding-top:4px;text-align:center;font-size:8px;color:#6b7280;">
-    Merci pour votre confiance&nbsp;!
+  <!-- ── FOOTER ── -->
+  <div style="border-top:3px double #111;margin-top:7px;padding-top:5px;text-align:center;">
+    <div style="font-size:8px;color:#444;letter-spacing:0.5px;">Merci pour votre confiance&nbsp;!</div>
   </div>
 
 </body>
