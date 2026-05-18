@@ -107,7 +107,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
 
   <!-- Header -->
   <div style="text-align:center;margin-bottom:5px;">
-    <div style="font-size:14px;font-weight:bold;letter-spacing:1px;">LIBRAIRIE 2B</div>
+    <div style="font-size:14px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
     <div style="font-size:8px;color:#6b7280;margin-top:1px;">${dateStr} &bull; ${timeStr}</div>
   </div>
 
