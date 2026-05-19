@@ -19,14 +19,14 @@ function sectionHeader(label: string): string {
   return `
   <div style="display:flex;align-items:center;margin:5px 0 3px;">
     <div style="flex:1;height:1px;background:#000;"></div>
-    <div style="padding:0 5px;font-size:7px;font-weight:bold;letter-spacing:1.5px;color:#000;">${label}</div>
+    <div style="padding:0 5px;font-size:8.5px;font-weight:bold;letter-spacing:1.5px;color:#000;">${label}</div>
     <div style="flex:1;height:1px;background:#000;"></div>
   </div>`
 }
 
 function row(label: string, value: string, valueStyle = ''): string {
   return `
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:8.5px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:10px;">
     <span style="color:#111;white-space:nowrap;">${label}</span>
     <span style="text-align:right;word-break:break-word;flex:1;margin-left:6px;font-weight:600;${valueStyle}">${value}</span>
   </div>`
@@ -44,9 +44,9 @@ export function buildReceiptHTML(data: ReceiptData): string {
     const label = multiChild ? `ENFANT ${i + 1}` : 'CODE DE R&Eacute;F&Eacute;RENCE'
     return `
     <div style="border:1.5px solid #222;margin:5px 0;padding:5px 4px;text-align:center;">
-      <div style="font-size:6.5px;letter-spacing:2px;color:#111;text-transform:uppercase;margin-bottom:3px;">${label}</div>
-      <div style="font-family:'Courier New',Courier,monospace;font-size:24px;font-weight:900;letter-spacing:8px;line-height:1;color:#111;">${child.code}</div>
-      ${multiChild ? `<div style="font-size:7px;color:#111;margin-top:3px;letter-spacing:0.5px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
+      <div style="font-size:8px;letter-spacing:2px;color:#111;text-transform:uppercase;margin-bottom:3px;">${label}</div>
+      <div style="font-family:'Courier New',Courier,monospace;font-size:29px;font-weight:900;letter-spacing:8px;line-height:1;color:#111;">${child.code}</div>
+      ${multiChild ? `<div style="font-size:8.5px;color:#111;margin-top:3px;letter-spacing:0.5px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
     </div>`
   }).join('')
 
@@ -71,7 +71,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
 
   const noteSection = data.note
     ? `${sectionHeader('NOTE')}
-    <div style="font-size:8px;color:#000;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
+    <div style="font-size:9.5px;color:#000;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
     : ''
 
   return `<!DOCTYPE html>
@@ -84,7 +84,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 8.5px;
+      font-size: 10px;
       line-height: 1.35;
       color: #111;
       background: #fff;
@@ -100,12 +100,12 @@ export function buildReceiptHTML(data: ReceiptData): string {
 
   <!-- ── HEADER ── -->
   <div style="border-top:3px double #111;border-bottom:3px double #111;padding:5px 0;text-align:center;margin-bottom:6px;">
-    <div style="font-size:15px;font-weight:900;letter-spacing:3px;line-height:1;">ESPACE BEN ALI</div>
-    <div style="font-size:7px;letter-spacing:2.5px;color:#111;margin-top:2px;text-transform:uppercase;">Librairie Scolaire</div>
+    <div style="font-size:18px;font-weight:900;letter-spacing:3px;line-height:1;">ESPACE BEN ALI</div>
+    <div style="font-size:8.5px;letter-spacing:2.5px;color:#111;margin-top:2px;text-transform:uppercase;">Librairie Scolaire</div>
   </div>
 
   <!-- ── DATE / TIME ── -->
-  <div style="display:flex;justify-content:space-between;font-size:7.5px;color:#111;margin-bottom:5px;">
+  <div style="display:flex;justify-content:space-between;font-size:9px;color:#111;margin-bottom:5px;">
     <span>${dateStr}</span>
     <span>${timeStr}</span>
   </div>
@@ -113,7 +113,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
   <!-- ── CONFIRMATION ── -->
   <div style="text-align:center;margin-bottom:6px;">
     <div style="display:inline-block;border:1.5px solid #111;border-radius:2px;padding:3px 10px;">
-      <span style="font-size:8px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">&#10003;&nbsp; Commande Confirm&eacute;e</span>
+      <span style="font-size:9.5px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">&#10003;&nbsp; Commande Confirm&eacute;e</span>
     </div>
   </div>
 
@@ -132,7 +132,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
 
   <!-- ── FOOTER ── -->
   <div style="border-top:3px double #111;margin-top:7px;padding-top:5px;text-align:center;">
-    <div style="font-size:8px;color:#111;letter-spacing:0.5px;">Merci pour votre confiance&nbsp;!</div>
+    <div style="font-size:9.5px;color:#111;letter-spacing:0.5px;">Merci pour votre confiance&nbsp;!</div>
   </div>
 
 </body>
