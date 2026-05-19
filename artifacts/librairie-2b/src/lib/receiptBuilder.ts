@@ -18,9 +18,9 @@ export interface ReceiptData {
 function sectionHeader(label: string): string {
   return `
   <div style="display:flex;align-items:center;margin:5px 0 3px;">
-    <div style="flex:1;height:1px;background:#bbb;"></div>
-    <div style="padding:0 5px;font-size:7px;font-weight:bold;letter-spacing:1.5px;color:#111;">${label}</div>
-    <div style="flex:1;height:1px;background:#bbb;"></div>
+    <div style="flex:1;height:1px;background:#000;"></div>
+    <div style="padding:0 5px;font-size:7px;font-weight:bold;letter-spacing:1.5px;color:#000;">${label}</div>
+    <div style="flex:1;height:1px;background:#000;"></div>
   </div>`
 }
 
@@ -66,12 +66,12 @@ export function buildReceiptHTML(data: ReceiptData): string {
     : ''
 
   const avanceSection = avanceNum && avanceNum > 0
-    ? `${sectionHeader('AVANCE')}${row('Avance', `${avanceNum} DHS`, 'font-weight:bold;color:#1a7a3c;')}`
+    ? `${sectionHeader('AVANCE')}${row('Avance', `${avanceNum} DHS`, 'font-weight:bold;color:#000;')}`
     : ''
 
   const noteSection = data.note
     ? `${sectionHeader('NOTE')}
-    <div style="font-size:8px;color:#333;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
+    <div style="font-size:8px;color:#000;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
     : ''
 
   return `<!DOCTYPE html>
