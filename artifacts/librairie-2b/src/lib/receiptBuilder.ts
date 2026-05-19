@@ -83,16 +83,16 @@ export function buildReceiptHTML(data: ReceiptData): string {
     @page { size: 75mm auto; margin: 2mm 3mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: 'Courier New', Courier, monospace;
       font-size: 8.5px;
-      line-height: 1.3;
+      line-height: 1.35;
       color: #111;
       background: #fff;
       width: 69mm;
-      padding: 1mm 0;
+      padding: 1mm 3mm 1mm 0;
     }
     @media print {
-      body { width: 100%; }
+      body { width: 100%; padding-right: 3mm; }
     }
   </style>
 </head>
