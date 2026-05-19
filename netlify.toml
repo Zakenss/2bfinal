@@ -1,0 +1,6 @@
+[build]
+  command = "pnpm --filter @workspace/librairie-2b run build:vercel"
+  publish = "artifacts/librairie-2b/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
