@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BookOpen, Check, Download, Printer, X, Plus, School, User, Mail, Phone, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { buildReceiptHTML } from '../lib/receiptBuilder'
 
 interface FormData {
   nom: string
@@ -296,69 +297,24 @@ function ClientForm({ onNavigate }: ClientFormProps) {
     return ecoles.filter(ecole => ecole.toLowerCase().includes(currentChild.ecole.toLowerCase()))
   }
 
-  const buildReceiptHTML = (): string => {
-    if (!submissionResult?.success || !submissionResult.formData) return ''
-    const fd = submissionResult.formData
-    const multiChild = (fd.childrenWithCodes?.length ?? 0) > 1
-    const now = new Date(Date.now() - 60 * 60 * 1000)
-    const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-
-    const childrenRows = (fd.childrenWithCodes ?? []).map((child, i) => {
-      const genre = fd.children[i]?.genre === 'fille' ? 'Fille' : fd.children[i]?.genre === 'garcon' ? 'Gar\u00e7on' : '-'
-      return `
-      <div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;">
-        ${multiChild ? `<div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:2px;">\u2014 ENFANT ${i + 1} \u2014</div>` : ''}
-        <div style="border:1px solid #000;text-align:center;padding:4px 2px;margin-bottom:3px;">
-          <div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-bottom:2px;">${multiChild ? `ENFANT ${i + 1} \u2014 ` : ''}CODE R\u00c9F\u00c9RENCE</div>
-          <div style="font-size:20px;font-weight:bold;letter-spacing:5px;line-height:1.2;">${child.code}</div>
-          ${multiChild ? `<div style="font-size:7px;font-weight:bold;text-transform:uppercase;margin-top:2px;">${child.ecole} \u2014 ${child.niveau}</div>` : ''}
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">\u00c9COLE:</span><span style="text-align:right;word-break:break-word;flex:1;">${child.ecole}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">NIVEAU:</span><span>${child.niveau}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">GENRE:</span><span>${genre}</span></div>
-      </div>`
-    }).join('')
-
-    return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Re\u00e7u \u2014 ${fd.nom}</title>
-  <style>
-    @page { size: 57mm auto; margin: 2mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: monospace; font-size: 9px; line-height: 1.45; color: #000; width: 53mm; padding: 3mm 2mm; }
-  </style>
-</head>
-<body>
-  <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:4px;margin-bottom:5px;">
-    <div style="font-size:12px;font-weight:bold;letter-spacing:1px;">ESPACE BEN ALI</div>
-    <div style="font-size:7.5px;margin-top:2px;">${dateStr} ${timeStr}</div>
-  </div>
-  <div style="text-align:center;font-weight:bold;font-size:9px;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">
-    \u2713 Commande Confirm\u00e9e
-  </div>
-  <div style="border-top:1px dashed #000;padding-top:4px;margin-top:2px;">
-    <div style="text-align:center;font-weight:bold;font-size:7.5px;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">\u2014\u2014 D\u00c9TAILS \u2014\u2014</div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">CLIENT:</span><span style="text-align:right;word-break:break-word;flex:1;">${fd.nom}</span></div>
-    ${fd.telephone ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">T\u00c9L:</span><span>${fd.telephone}</span></div>` : ''}
-    ${fd.couverture_demandee ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">COUVERTURE:</span><span>OUI</span></div>` : ''}
-    ${fd.avance && fd.avance !== '0' ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-weight:bold;white-space:nowrap;margin-right:4px;">AVANCE:</span><span>${fd.avance} DHS</span></div>` : ''}
-    ${childrenRows}
-    ${fd.note ? `<div style="border-top:1px dashed #aaa;padding-top:3px;margin-top:3px;"><div style="font-weight:bold;">NOTE:</div><div style="word-break:break-word;text-transform:uppercase;margin-top:1px;">${fd.note}</div></div>` : ''}
-  </div>
-  <div style="border-top:2px solid #000;margin-top:5px;padding-top:4px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:7.5px;letter-spacing:0.5px;">
-    Merci pour votre confiance
-  </div>
-</body>
-</html>`
-  }
-
   const handlePrint = () => {
-    const html = buildReceiptHTML()
-    if (!html) return
-    const printWindow = window.open('', '_blank', 'width=300,height=600')
+    if (!submissionResult?.success || !submissionResult.formData) return
+    const fd = submissionResult.formData
+    const children = (fd.childrenWithCodes ?? []).map((child, i) => ({
+      ecole: child.ecole,
+      niveau: child.niveau,
+      genre: fd.children[i]?.genre ?? null,
+      code: child.code,
+    }))
+    const html = buildReceiptHTML({
+      nom: fd.nom,
+      telephone: fd.telephone || null,
+      avance: fd.avance || null,
+      note: fd.note || null,
+      couverture_demandee: fd.couverture_demandee,
+      children,
+    })
+    const printWindow = window.open('', '_blank', 'width=320,height=600')
     if (!printWindow) {
       alert('Veuillez autoriser les pop-ups pour imprimer.')
       return

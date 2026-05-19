@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Librairie 2B"
+title = "Espace Ben Ali"
 version = "1.0.0"
 id = "artifacts/librairie-2b"
 router = "path"

@@ -1,9 +1,0 @@
-{
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @workspace/librairie-2b run build:vercel",
-  "outputDirectory": "artifacts/librairie-2b/dist",
-  "framework": null,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}

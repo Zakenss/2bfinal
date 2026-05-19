@@ -20,7 +20,6 @@ function App() {
 
   const handlePageSelect = (pageId: Page) => {
     setCurrentPage(pageId)
-    // Reset authentication state when going back to home
     if (pageId === 'home') {
       setIsEspaceClientAuthenticated(false)
       setCurrentUser('')
@@ -32,7 +31,6 @@ function App() {
     <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] px-4 py-12 md:py-20 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-parchment-100/50 to-parchment-200/80 pointer-events-none" />
       <div className="max-w-4xl mx-auto relative z-10">
-        {/* Header */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center space-x-3 mb-6">
             <div className="w-20 h-20 bg-espresso-900 rounded-full flex items-center justify-center shadow-lg">
@@ -47,9 +45,7 @@ function App() {
           </p>
         </div>
 
-        {/* Page Selection Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Espace Client */}
           <button
             onClick={() => {
               if (isEspaceClientAuthenticated) {
@@ -66,25 +62,21 @@ function App() {
               </div>
               <ArrowRight className="h-6 w-6 text-espresso-300 group-hover:text-amber-600 transition-colors duration-300 transform group-hover:translate-x-1" />
             </div>
-            
             <h3 className="text-3xl font-heading font-bold text-espresso-900 mb-4">
               Espace Client
             </h3>
-            
             <p className="text-espresso-600 mb-8 leading-relaxed flex-grow">
               Accès aux services clients : commandes, gestion et administration
             </p>
-            
             <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide ${
-              isEspaceClientAuthenticated 
-                ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+              isEspaceClientAuthenticated
+                ? 'bg-amber-100 text-amber-800 border border-amber-200'
                 : 'bg-parchment-200 text-espresso-700 border border-parchment-300'
             }`}>
               {isEspaceClientAuthenticated ? 'Connecté' : 'Connexion requise'}
             </div>
           </button>
 
-          {/* Espace Collaborateur */}
           <button
             onClick={() => handlePageSelect('employee')}
             className="group bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-left shadow-book hover:shadow-book-hover transition-all duration-300 transform hover:-translate-y-1 border border-parchment-300 flex flex-col"
@@ -95,18 +87,15 @@ function App() {
               </div>
               <ArrowRight className="h-6 w-6 text-espresso-300 group-hover:text-espresso-800 transition-colors duration-300 transform group-hover:translate-x-1" />
             </div>
-            
             <h3 className="text-3xl font-heading font-bold text-espresso-900 mb-4">
               Espace Collaborateur
             </h3>
-            
             <p className="text-espresso-600 mb-8 leading-relaxed flex-grow">
               Recherchez et gérez les commandes des clients
             </p>
           </button>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-16">
           <div className="inline-block px-6 py-2 border-t border-parchment-300">
             <p className="text-sm font-medium text-espresso-500 uppercase tracking-widest">
@@ -121,7 +110,6 @@ function App() {
   const renderEspaceClientPage = () => (
     <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] px-4 py-10 relative">
       <div className="max-w-5xl mx-auto relative z-10">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center p-4 bg-espresso-900 rounded-full mb-6 shadow-md">
             <Users className="h-10 w-10 text-parchment-100" />
@@ -134,7 +122,6 @@ function App() {
           </p>
         </div>
 
-        {/* Back Button */}
         <div className="mb-8 flex justify-center">
           <button
             onClick={() => setCurrentPage('home')}
@@ -144,9 +131,7 @@ function App() {
           </button>
         </div>
 
-        {/* Service Selection Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Commande Client */}
           <button
             onClick={() => handlePageSelect('client')}
             className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
@@ -167,7 +152,6 @@ function App() {
             </div>
           </button>
 
-          {/* Follow Up */}
           <button
             onClick={() => handlePageSelect('follow-up')}
             className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
@@ -188,7 +172,6 @@ function App() {
             </div>
           </button>
 
-          {/* Correction */}
           <button
             onClick={() => handlePageSelect('correction')}
             className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
@@ -209,7 +192,6 @@ function App() {
             </div>
           </button>
 
-          {/* Gestion des Écoles */}
           <button
             onClick={() => handlePageSelect('ecole')}
             className="group bg-white rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-parchment-300"
@@ -232,7 +214,6 @@ function App() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-parchment-300">
-          {/* Gestionnaire — gérant only */}
           {currentUserRole === 'gerant' && (
           <button
             onClick={() => handlePageSelect('manager')}
@@ -255,7 +236,6 @@ function App() {
           </button>
           )}
 
-          {/* Couverture - Only for aichabenzangue@gmail.com */}
           {(currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com') && (
           <button
             onClick={() => handlePageSelect('couverture')}
@@ -278,7 +258,6 @@ function App() {
           </button>
           )}
 
-          {/* Accès - credential management, gérant only */}
           {currentUserRole === 'gerant' && (
           <button
             onClick={() => handlePageSelect('zakaria')}
@@ -300,7 +279,6 @@ function App() {
             </div>
           </button>
           )}
-
         </div>
       </div>
     </div>
@@ -312,7 +290,7 @@ function App() {
         return renderHomePage()
       case 'espace-client-auth':
         return (
-          <SimpleAuth 
+          <SimpleAuth
             onAuthSuccess={() => {
               setIsEspaceClientAuthenticated(true)
               setCurrentPage('espace-client')
@@ -347,19 +325,18 @@ function App() {
   }
 
   const showNavigation = currentPage !== 'home' && currentPage !== 'espace-client' && currentPage !== 'espace-client-auth' && (
-    (currentPage === 'employee') || 
+    (currentPage === 'employee') ||
     (currentPage === 'follow-up' && isEspaceClientAuthenticated) ||
     (currentPage === 'correction' && isEspaceClientAuthenticated) ||
     (currentPage === 'ecole' && isEspaceClientAuthenticated) ||
     (currentPage === 'couverture' && isEspaceClientAuthenticated) ||
-    (currentPage === 'client' && isEspaceClientAuthenticated) || 
+    (currentPage === 'client' && isEspaceClientAuthenticated) ||
     (currentPage === 'manager' && isEspaceClientAuthenticated) ||
     (currentPage === 'zakaria' && isEspaceClientAuthenticated)
   )
 
   return (
     <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] font-sans text-espresso-900">
-      {/* Header */}
       {showNavigation && (
         <header className="bg-espresso-900 text-parchment-100 shadow-md border-b border-espresso-800 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -375,7 +352,6 @@ function App() {
                   Espace Ben Ali
                 </h1>
               </button>
-              
               <button
                 onClick={() => setCurrentPage('home')}
                 className="px-5 py-2 text-sm font-semibold bg-white/10 hover:bg-white/20 text-parchment-100 rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm"
@@ -386,8 +362,6 @@ function App() {
           </div>
         </header>
       )}
-
-      {/* Main Content */}
       <main className={showNavigation ? "max-w-7xl mx-auto py-10" : ""}>
         {renderPage()}
       </main>
