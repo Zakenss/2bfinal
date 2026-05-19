@@ -27,7 +27,7 @@ function sectionHeader(label: string): string {
 function row(label: string, value: string, valueStyle = ''): string {
   return `
   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:8.5px;">
-    <span style="color:#666;white-space:nowrap;">${label}</span>
+    <span style="color:#111;white-space:nowrap;">${label}</span>
     <span style="text-align:right;word-break:break-word;flex:1;margin-left:6px;font-weight:600;${valueStyle}">${value}</span>
   </div>`
 }
