@@ -1,11 +1,26 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? ''
 
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null as any
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+
+if (!isSupabaseConfigured && import.meta.env.DEV) {
+  console.warn(
+    '[Librairie 2B] Supabase is not configured. Copy artifacts/librairie-2b/.env.example to .env.local and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+  )
+}
+
+function createSupabaseClient(): SupabaseClient {
+  if (!isSupabaseConfigured) {
+    throw new Error(
+      'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to artifacts/librairie-2b/.env.local',
+    )
+  }
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
+
+export const supabase = isSupabaseConfigured ? createSupabaseClient() : (null as unknown as SupabaseClient)
 
 export type Student = {
   id: string

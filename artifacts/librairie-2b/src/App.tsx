@@ -38,7 +38,7 @@ function App() {
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-heading font-bold text-espresso-900 mb-6">
-            Espace Ben Ali
+            Librairie 2B
           </h1>
           <p className="text-lg md:text-xl text-espresso-700 max-w-2xl mx-auto font-medium">
             Système de gestion des livres scolaires. Sélectionnez votre espace pour commencer.
@@ -99,7 +99,7 @@ function App() {
         <div className="text-center mt-16">
           <div className="inline-block px-6 py-2 border-t border-parchment-300">
             <p className="text-sm font-medium text-espresso-500 uppercase tracking-widest">
-              © 2025 Espace Ben Ali
+              © 2025 Librairie 2B
             </p>
           </div>
         </div>
@@ -349,7 +349,7 @@ function App() {
                   <BookOpen className="h-6 w-6" />
                 </div>
                 <h1 className="text-2xl font-heading font-bold tracking-tight">
-                  Espace Ben Ali
+                  Librairie 2B
                 </h1>
               </button>
               <button

@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Espace Ben Ali"
+title = "Librairie 2B"
 version = "1.0.0"
 id = "artifacts/librairie-2b"
 router = "path"
@@ -29,3 +29,6 @@ to = "/index.html"
 [services.env]
 PORT = "19962"
 BASE_PATH = "/"
+# Set in Replit Secrets (or .env.local locally):
+# VITE_SUPABASE_URL = "https://YOUR_PROJECT.supabase.co"
+# VITE_SUPABASE_ANON_KEY = "your-anon-key"

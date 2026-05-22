@@ -100,7 +100,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
 
   <!-- ── HEADER ── -->
   <div style="border-top:3px double #000;border-bottom:3px double #000;padding:5px 0;text-align:center;margin-bottom:6px;">
-    <div style="font-size:18px;font-weight:900;letter-spacing:3px;line-height:1;">ESPACE BEN ALI</div>
+    <div style="font-size:18px;font-weight:900;letter-spacing:3px;line-height:1;">LIBRAIRIE 2B</div>
     <div style="font-size:8.5px;letter-spacing:2.5px;color:#000;margin-top:2px;text-transform:uppercase;">Librairie Scolaire</div>
   </div>
 
