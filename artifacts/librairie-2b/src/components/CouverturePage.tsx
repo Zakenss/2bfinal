@@ -53,7 +53,7 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
       const { error } = await supabase.from('students').update({
         couverture_sent: !bookList.couverture_sent,
         couverture_sent_at: !bookList.couverture_sent ? new Date().toISOString() : null,
-        couverture_sent_by: !bookList.couverture_sent ? 'aichabenzangue@gmail.com' : null,
+        couverture_sent_by: !bookList.couverture_sent ? (currentUser || null) : null,
       }).eq('id', bookList.id)
       if (error) throw error
       loadCouvertureOrders()

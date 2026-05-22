@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { BookOpen, LogIn } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { mapDbRoleToAppRole } from '../lib/couvertureAccess'
 
 interface SimpleAuthProps {
   onAuthSuccess: () => void
@@ -34,8 +35,7 @@ function SimpleAuth({ onAuthSuccess, title, description, onUserIdentified, onRol
       if (data && data.active && data.password === password) {
         if (onUserIdentified) onUserIdentified(data.email)
         if (onRoleIdentified) {
-          const role = data.role === 'admin' ? 'gerant' : 'utilisateur'
-          onRoleIdentified(role)
+          onRoleIdentified(mapDbRoleToAppRole(data.role))
         }
         onAuthSuccess()
       } else {

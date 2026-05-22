@@ -75,3 +75,8 @@ alter table public.students replica identity full;
 -- Optional seed: manager login (change password after first login)
 -- insert into public.users (space, username, email, password, role, active)
 -- values ('espace_client', 'admin@example.com', 'admin@example.com', 'changeme', 'admin', true);
+
+-- Couverture page access for lib2b@gmail.com (set your password)
+-- insert into public.users (space, username, email, password, role, active)
+-- values ('espace_client', 'lib2b@gmail.com', 'lib2b@gmail.com', 'YOUR_PASSWORD', 'couverture', true)
+-- on conflict do nothing;

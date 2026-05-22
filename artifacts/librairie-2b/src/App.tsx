@@ -9,6 +9,7 @@ import FollowUp from './components/FollowUp'
 import Correction from './components/Correction'
 import CouverturePage from './components/CouverturePage'
 import AccessPage from './components/AccessPage'
+import { canAccessCouverture } from './lib/couvertureAccess'
 
 type Page = 'client' | 'employee' | 'manager' | 'ecole' | 'home' | 'espace-client' | 'espace-client-auth' | 'follow-up' | 'correction' | 'couverture' | 'zakaria'
 
@@ -236,7 +237,7 @@ function App() {
           </button>
           )}
 
-          {(currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com') && (
+          {canAccessCouverture(currentUser, currentUserRole) && (
           <button
             onClick={() => handlePageSelect('couverture')}
             className="group bg-espresso-50 rounded-2xl p-6 text-left shadow-sm hover:shadow-book transition-all duration-200 border border-espresso-200"
@@ -316,7 +317,7 @@ function App() {
       case 'ecole':
         return isEspaceClientAuthenticated ? <EcoleManagement onNavigate={setCurrentPage} /> : renderHomePage()
       case 'couverture':
-        return (isEspaceClientAuthenticated && (currentUser === 'aichabenzangue@gmail.com' || currentUser === 'lib2b@gmail.com')) ? <CouverturePage onNavigate={setCurrentPage} currentUser={currentUser} /> : renderHomePage()
+        return (isEspaceClientAuthenticated && canAccessCouverture(currentUser, currentUserRole)) ? <CouverturePage onNavigate={setCurrentPage} currentUser={currentUser} /> : renderHomePage()
       case 'zakaria':
         return (isEspaceClientAuthenticated && currentUserRole === 'gerant') ? <AccessPage onNavigate={setCurrentPage} /> : renderHomePage()
       default:
