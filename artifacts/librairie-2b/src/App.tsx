@@ -340,8 +340,8 @@ function App() {
     <div className="min-h-screen bg-parchment-100 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] font-sans text-espresso-900">
       {showNavigation && (
         <header className="bg-espresso-900 text-parchment-100 shadow-md border-b border-espresso-800 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-20">
+          <div className={currentPage === 'employee' ? 'w-full px-3 sm:px-4' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+            <div className={`flex items-center justify-between ${currentPage === 'employee' ? 'h-14 sm:h-16' : 'h-20'}`}>
               <button
                 onClick={() => setCurrentPage('home')}
                 className="flex items-center space-x-3 text-parchment-200 hover:text-white transition-colors group"
@@ -349,7 +349,7 @@ function App() {
                 <div className="p-2 bg-espresso-800 rounded-lg group-hover:bg-amber-600 transition-colors">
                   <BookOpen className="h-6 w-6" />
                 </div>
-                <h1 className="text-2xl font-heading font-bold tracking-tight">
+                <h1 className={`font-heading font-bold tracking-tight ${currentPage === 'employee' ? 'text-lg sm:text-xl' : 'text-2xl'}`}>
                   Librairie 2B
                 </h1>
               </button>
@@ -363,7 +363,15 @@ function App() {
           </div>
         </header>
       )}
-      <main className={showNavigation ? "max-w-7xl mx-auto py-10" : ""}>
+      <main
+        className={
+          showNavigation
+            ? currentPage === 'employee'
+              ? 'w-full py-2 sm:py-4'
+              : 'max-w-7xl mx-auto py-10 px-4 sm:px-6'
+            : ''
+        }
+      >
         {renderPage()}
       </main>
     </div>

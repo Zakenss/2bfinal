@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Package, Search, Check, Save } from 'lucide-react'
+import { Package, Search, MapPin } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 
 interface CouverturePageProps {
   onNavigate: (page: 'espace-client') => void
   currentUser?: string
+}
+
+function formatStorageLocation(order: Student): string | null {
+  if (!order.liste_prete || !order.rangee || !order.niveau_rangement) return null
+  return `(${order.rangee}, ${order.niveau_rangement})`
 }
 
 function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
@@ -115,7 +120,18 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
               <div className="p-6 flex-grow flex flex-col">
                 <h3 className="text-xl font-bold text-espresso-900 mb-1">{order.nom}</h3>
                 <p className="text-sm text-espresso-600 mb-1">{order.ecole} — {order.niveau}</p>
-                <p className="text-xs font-medium text-espresso-400 mb-6">{new Date(order.created_at ?? '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                <p className="text-xs font-medium text-espresso-400 mb-3">{new Date(order.created_at ?? '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                {formatStorageLocation(order) && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 mb-4">
+                    <MapPin className="h-4 w-4 text-green-700 shrink-0" />
+                    <p className="text-sm font-bold text-green-900">
+                      Stockée en <span className="font-mono tracking-wide">{formatStorageLocation(order)}</span>
+                    </p>
+                  </div>
+                )}
+                {!order.liste_prete && (
+                  <p className="text-xs font-medium text-amber-700 mb-4">Emplacement disponible une fois la liste prête.</p>
+                )}
                 <div className="mt-auto pt-6 border-t border-parchment-200">
                   <button
                     onClick={() => handleMarkAsSent(order)}

@@ -189,54 +189,63 @@ function EmployeeSearch() {
     )
   }
 
+  const hasResult = Boolean(bookList || notFound)
+
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-16">
+    <div className="w-full min-w-0 max-w-2xl md:mx-auto px-3 sm:px-4 pb-8">
 
       {/* Top bar */}
-      <div className="flex items-center justify-between py-4 mb-8 border-b border-parchment-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-espresso-900 rounded-lg flex items-center justify-center">
+      <div className="flex items-center justify-between gap-2 py-3 mb-4 border-b border-parchment-200">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 shrink-0 bg-espresso-900 rounded-lg flex items-center justify-center">
             <User className="h-4 w-4 text-parchment-100" />
           </div>
-          <div>
-            <p className="text-xs text-espresso-500 font-medium uppercase tracking-widest">Connecté</p>
-            <p className="text-sm font-bold text-espresso-900">{currentEmployee}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] text-espresso-500 font-medium uppercase tracking-widest">Connecté</p>
+            <p className="text-sm font-bold text-espresso-900 truncate">{currentEmployee}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-parchment-200 text-espresso-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-parchment-300 transition-colors"
+          className="shrink-0 px-3 py-2 bg-parchment-200 text-espresso-700 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-parchment-300 transition-colors"
         >
-          Se déconnecter
+          Déconnexion
         </button>
       </div>
 
-      {/* Page title */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-espresso-900 rounded-2xl mb-4 shadow-md">
-          <Search className="h-7 w-7 text-parchment-100" />
+      {/* Page title — hidden when showing search result to save space */}
+      {!hasResult && (
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-espresso-900 rounded-2xl mb-3 shadow-md">
+            <Search className="h-6 w-6 text-parchment-100" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-espresso-900 mb-1">Recherche Commande</h1>
+          <p className="text-espresso-500 text-sm font-medium">Code à 4 caractères</p>
         </div>
-        <h1 className="text-3xl font-heading font-bold text-espresso-900 mb-1">Recherche Commande</h1>
-        <p className="text-espresso-500 text-sm font-medium">Entrez le code à 4 caractères</p>
-      </div>
+      )}
 
-      {/* Search box */}
-      <form onSubmit={handleSearch} className="flex gap-3 mb-8">
+      {/* Search box — sticky on mobile when result is shown */}
+      <form
+        onSubmit={handleSearch}
+        className={`flex flex-col sm:flex-row gap-2 sm:gap-3 ${hasResult ? 'mb-4 sticky top-20 z-40 bg-parchment-100/95 backdrop-blur-sm py-2 -mx-3 px-3 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none' : 'mb-6'}`}
+      >
         <input
           type="text"
+          inputMode="text"
+          autoComplete="off"
           value={searchCode}
           onChange={(e) => {
             setSearchCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))
             setNotFound(false)
           }}
-          placeholder="EX: AB12"
+          placeholder="AB12"
           maxLength={4}
-          className="flex-1 px-5 py-4 text-2xl text-center border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors tracking-[0.3em] font-mono font-bold uppercase bg-white text-espresso-900 placeholder-parchment-300 shadow-sm"
+          className="w-full min-w-0 px-4 py-3.5 sm:py-4 text-3xl sm:text-2xl text-center border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors tracking-[0.35em] font-mono font-bold uppercase bg-white text-espresso-900 placeholder-parchment-300 shadow-sm"
         />
         <button
           type="submit"
           disabled={searchCode.length !== 4 || isSearching}
-          className="px-6 py-4 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-md whitespace-nowrap"
+          className="w-full sm:w-auto shrink-0 px-5 py-3.5 sm:py-4 bg-amber-600 text-white rounded-xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-md"
         >
           {isSearching ? 'Recherche…' : 'Rechercher'}
         </button>
@@ -244,7 +253,7 @@ function EmployeeSearch() {
 
       {/* Not found */}
       {notFound && (
-        <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm p-10 text-center">
+        <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm p-6 sm:p-8 text-center w-full">
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="h-7 w-7 text-red-400" />
           </div>
@@ -255,21 +264,21 @@ function EmployeeSearch() {
 
       {/* Order card */}
       {bookList && (
-        <div className="space-y-4">
+        <div className="space-y-3 w-full min-w-0">
 
           {/* Order header */}
-          <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${bookList.liste_prete ? 'border-green-200' : 'border-amber-200'}`}>
-            <div className={`flex items-center justify-between px-6 py-4 ${bookList.liste_prete ? 'bg-green-50' : 'bg-amber-50'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${bookList.liste_prete ? 'bg-green-600' : 'bg-amber-500'}`}>
+          <div className={`rounded-2xl border-2 overflow-hidden shadow-sm w-full ${bookList.liste_prete ? 'border-green-200' : 'border-amber-200'}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5 ${bookList.liste_prete ? 'bg-green-50' : 'bg-amber-50'}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${bookList.liste_prete ? 'bg-green-600' : 'bg-amber-500'}`}>
                   <Package className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-espresso-500">Commande</p>
-                  <p className="text-lg font-mono font-black text-espresso-900 tracking-widest">#{bookList.code}</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-500">Commande</p>
+                  <p className="text-xl sm:text-lg font-mono font-black text-espresso-900 tracking-widest">#{bookList.code}</p>
                 </div>
               </div>
-              <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+              <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border ${
                 bookList.liste_prete
                   ? 'bg-green-100 text-green-800 border-green-300'
                   : 'bg-amber-100 text-amber-800 border-amber-300'
@@ -279,8 +288,8 @@ function EmployeeSearch() {
             </div>
 
             {/* Order details */}
-            <div className="bg-white px-6 py-5">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white px-4 py-4 sm:px-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex items-start gap-2">
                   <User className="h-4 w-4 text-espresso-400 mt-0.5 shrink-0" />
                   <div>
@@ -333,10 +342,10 @@ function EmployeeSearch() {
 
               {/* Location badge if already placed */}
               {bookList.liste_prete && bookList.rangee && bookList.niveau_rangement && (
-                <div className="mt-4 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                <div className="mt-3 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 w-full">
                   <MapPin className="h-4 w-4 text-green-600 shrink-0" />
-                  <p className="text-sm text-green-800 font-medium">
-                    Rangée <strong>{bookList.rangee}</strong> · Étagère <strong>{bookList.niveau_rangement}</strong>
+                  <p className="text-sm text-green-900 font-bold">
+                    Stockée en <span className="font-mono">({bookList.rangee}, {bookList.niveau_rangement})</span>
                   </p>
                 </div>
               )}
@@ -344,13 +353,13 @@ function EmployeeSearch() {
           </div>
 
           {/* Update form */}
-          <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm overflow-hidden">
-            <div className="bg-parchment-100 border-b border-parchment-200 px-6 py-4 flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-parchment-200 shadow-sm overflow-hidden w-full">
+            <div className="bg-parchment-100 border-b border-parchment-200 px-4 py-3 sm:px-5 flex items-center gap-2">
               <Check className="h-4 w-4 text-amber-700" />
               <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-800">Mise à jour du statut</h3>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-5 space-y-5">
 
               {/* Liste prête toggle */}
               <div>

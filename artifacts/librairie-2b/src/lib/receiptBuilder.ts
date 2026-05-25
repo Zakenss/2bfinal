@@ -15,21 +15,16 @@ export interface ReceiptData {
   created_at?: string
 }
 
-function sectionHeader(label: string): string {
+function line(label: string, value: string): string {
   return `
-  <div style="display:flex;align-items:center;margin:5px 0 3px;">
-    <div style="flex:1;height:1px;background:#000;"></div>
-    <div style="padding:0 5px;font-size:8.5px;font-weight:bold;letter-spacing:1.5px;color:#000;">${label}</div>
-    <div style="flex:1;height:1px;background:#000;"></div>
-  </div>`
+  <p style="margin:0 0 4px;font-size:10px;">
+    <span>${label}</span>
+    <span style="float:right;text-align:right;max-width:55%;">${value}</span>
+  </p>`
 }
 
-function row(label: string, value: string, valueStyle = ''): string {
-  return `
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:10px;">
-    <span style="color:#000;white-space:nowrap;">${label}</span>
-    <span style="text-align:right;word-break:break-word;flex:1;margin-left:6px;font-weight:600;${valueStyle}">${value}</span>
-  </div>`
+function blockTitle(text: string): string {
+  return `<p style="margin:10px 0 4px;font-size:9px;letter-spacing:1px;text-transform:uppercase;">${text}</p>`
 }
 
 export function buildReceiptHTML(data: ReceiptData): string {
@@ -40,48 +35,45 @@ export function buildReceiptHTML(data: ReceiptData): string {
   const multiChild = data.children.length > 1
   const avanceNum = typeof data.avance === 'string' ? parseFloat(data.avance) : (data.avance ?? 0)
 
-  const childBoxes = data.children.map((child, i) => {
-    const label = multiChild ? `ENFANT ${i + 1}` : 'CODE DE R&Eacute;F&Eacute;RENCE'
+  const codeBlocks = data.children.map((child, i) => {
+    const label = multiChild ? `Enfant ${i + 1}` : 'Code'
     return `
-    <div style="border:1.5px solid #000;margin:5px 0;padding:5px 4px;text-align:center;">
-      <div style="font-size:8px;letter-spacing:2px;color:#000;text-transform:uppercase;margin-bottom:3px;">${label}</div>
-      <div style="font-family:'Courier New',Courier,monospace;font-size:29px;font-weight:900;letter-spacing:8px;line-height:1;color:#000;">${child.code}</div>
-      ${multiChild ? `<div style="font-size:8.5px;color:#000;margin-top:3px;letter-spacing:0.5px;">${child.ecole} &mdash; ${child.niveau}</div>` : ''}
-    </div>`
+    <p style="margin:8px 0 2px;font-size:9px;text-transform:uppercase;">${label}</p>
+    <p style="margin:0 0 4px;font-size:26px;letter-spacing:6px;text-align:center;">${child.code}</p>
+    ${multiChild ? `<p style="margin:0 0 6px;font-size:9px;text-align:center;">${child.ecole} — ${child.niveau}</p>` : ''}`
   }).join('')
 
   const childDetails = data.children.map((child, i) => {
-    const genre = child.genre === 'fille' ? 'Fille' : child.genre === 'garcon' ? 'Gar\u00e7on' : (child.genre || '\u2014')
-    const label = multiChild ? `ENFANT ${i + 1}` : 'ENFANT'
+    const genre = child.genre === 'fille' ? 'Fille' : child.genre === 'garcon' ? 'Garçon' : (child.genre || '—')
+    const label = multiChild ? `Enfant ${i + 1}` : 'Enfant'
     return `
-    ${sectionHeader(label)}
-    ${row('\u00c9cole', child.ecole)}
-    ${row('Niveau', child.niveau)}
-    ${row('Genre', genre)}
-    ${row('Code', child.code, "font-family:'Courier New',Courier,monospace;letter-spacing:2px;")}`
+    ${blockTitle(label)}
+    ${line('École', child.ecole)}
+    ${line('Niveau', child.niveau)}
+    ${line('Genre', genre)}
+    ${line('Code', child.code)}`
   }).join('')
 
   const couvertureSection = data.couverture_demandee
-    ? `${sectionHeader('COUVERTURE')}${row('Couverture', 'DEMAND\u00c9E', 'font-weight:bold;')}`
+    ? `${blockTitle('Couverture')}${line('Couverture', 'Demandée')}`
     : ''
 
   const avanceSection = avanceNum && avanceNum > 0
-    ? `${sectionHeader('AVANCE')}${row('Avance', `${avanceNum} DHS`, 'font-weight:bold;color:#000;')}`
+    ? `${blockTitle('Avance')}${line('Avance', `${avanceNum} DHS`)}`
     : ''
 
   const noteSection = data.note
-    ? `${sectionHeader('NOTE')}
-    <div style="font-size:9.5px;color:#000;word-break:break-word;line-height:1.4;padding:0 1px;">${data.note}</div>`
+    ? `${blockTitle('Note')}<p style="margin:0 0 6px;font-size:10px;line-height:1.4;">${data.note}</p>`
     : ''
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Re&ccedil;u &mdash; ${data.nom}</title>
+  <title>Reçu — ${data.nom}</title>
   <style>
-    @page { size: 75mm auto; margin: 2mm 3mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: 75mm auto; margin: 3mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-weight: bold; }
     body {
       font-family: 'Courier New', Courier, monospace;
       font-size: 10px;
@@ -89,51 +81,36 @@ export function buildReceiptHTML(data: ReceiptData): string {
       color: #000;
       background: #fff;
       width: 69mm;
-      padding: 1mm 3mm 1mm 0;
+      padding: 2mm;
     }
     @media print {
-      body { width: 100%; padding-right: 3mm; }
+      body { width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── HEADER ── -->
-  <div style="border-top:3px double #000;border-bottom:3px double #000;padding:5px 0;text-align:center;margin-bottom:6px;">
-    <div style="font-size:18px;font-weight:900;letter-spacing:3px;line-height:1;">LIBRAIRIE 2B</div>
-    <div style="font-size:8.5px;letter-spacing:2.5px;color:#000;margin-top:2px;text-transform:uppercase;">Librairie Scolaire</div>
-  </div>
+  <p style="margin:0 0 8px;font-size:16px;letter-spacing:2px;text-align:center;">LIBRAIRIE 2B</p>
 
-  <!-- ── DATE / TIME ── -->
-  <div style="display:flex;justify-content:space-between;font-size:9px;color:#000;margin-bottom:5px;">
+  <p style="margin:0 0 8px;font-size:9px;display:flex;justify-content:space-between;">
     <span>${dateStr}</span>
     <span>${timeStr}</span>
-  </div>
+  </p>
 
-  <!-- ── CONFIRMATION ── -->
-  <div style="text-align:center;margin-bottom:6px;">
-    <div style="display:inline-block;border:1.5px solid #000;border-radius:2px;padding:3px 10px;">
-      <span style="font-size:9.5px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">&#10003;&nbsp; Commande Confirm&eacute;e</span>
-    </div>
-  </div>
+  <p style="margin:0 0 10px;font-size:10px;text-align:center;text-transform:uppercase;">Commande confirmée</p>
 
-  <!-- ── CODE BOX(ES) ── -->
-  ${childBoxes}
+  ${codeBlocks}
 
-  <!-- ── DETAILS SECTION ── -->
-  ${sectionHeader('D&Eacute;TAILS')}
-  ${row('Nom', data.nom)}
-  ${data.telephone ? row('T&eacute;l', data.telephone) : ''}
+  ${blockTitle('Détails')}
+  ${line('Nom', data.nom)}
+  ${data.telephone ? line('Tél', data.telephone) : ''}
 
   ${childDetails}
   ${couvertureSection}
   ${avanceSection}
   ${noteSection}
 
-  <!-- ── FOOTER ── -->
-  <div style="border-top:3px double #000;margin-top:7px;padding-top:5px;text-align:center;">
-    <div style="font-size:9.5px;color:#000;letter-spacing:0.5px;">Merci pour votre confiance&nbsp;!</div>
-  </div>
+  <p style="margin:12px 0 0;padding-top:8px;border-top:1px solid #000;font-size:9px;text-align:center;">Merci pour votre confiance !</p>
 
 </body>
 </html>`
