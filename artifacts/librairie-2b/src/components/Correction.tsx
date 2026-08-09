@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CreditCard as Edit, Search, Plus, Trash2, Printer } from 'lucide-react'
+import { CreditCard as Edit, Search, Plus, Trash2, Printer, Check } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 import { buildReceiptHTML } from '../lib/receiptBuilder'
 
@@ -45,6 +45,10 @@ function Correction({ onNavigate }: CorrectionProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [deletingOrder, setDeletingOrder] = useState<GroupedOrder | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [ecoles, setEcoles] = useState<string[]>([])
+  const [isLoadingEcoles, setIsLoadingEcoles] = useState(true)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [activeChildIndex, setActiveChildIndex] = useState<number | null>(null)
 
   const loadRecentOrders = async () => {
     try {
@@ -117,6 +121,45 @@ function Correction({ onNavigate }: CorrectionProps) {
       clearInterval(refreshInterval)
     }
   }, [])
+
+  useEffect(() => {
+    const loadEcoles = async () => {
+      setIsLoadingEcoles(true)
+      try {
+        const { data, error } = await supabase
+          .from('ecoles')
+          .select('nom_ecole')
+          .order('nom_ecole')
+        if (error) throw error
+        setEcoles((data || []).map(item => item.nom_ecole).filter(Boolean))
+      } catch (err) {
+        console.error('Erreur lors du chargement des écoles:', err)
+      } finally {
+        setIsLoadingEcoles(false)
+      }
+    }
+    loadEcoles()
+  }, [])
+
+  const getFilteredEcoles = (query: string) => {
+    if (!query.trim()) return ecoles.slice(0, 20)
+    const q = query.toLowerCase()
+    return ecoles.filter(ecole => ecole.toLowerCase().includes(q)).slice(0, 20)
+  }
+
+  const updateChild = (
+    index: number,
+    field: 'ecole' | 'niveau' | 'genre',
+    value: string
+  ) => {
+    if (!editForm) return
+    setEditForm({
+      ...editForm,
+      children: editForm.children.map((c, i) =>
+        i === index ? { ...c, [field]: value } : c
+      ),
+    })
+  }
 
   const handlePrintOrder = (order: GroupedOrder) => {
     const html = buildReceiptHTML({
@@ -271,25 +314,57 @@ function Correction({ onNavigate }: CorrectionProps) {
         </div>
 
         <div className="bg-white rounded-3xl shadow-book border border-parchment-300 overflow-hidden">
-          <div className="p-8 space-y-8">
-            <div>
-              <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                Nom de l'élève ou parent *
-              </label>
-              <input
-                type="text"
-                required
-                value={editForm.nom}
-                onChange={e => setEditForm({ ...editForm, nom: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50"
-              />
+          <div className="p-8 space-y-10">
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-500 border-b border-parchment-200 pb-2">
+                Informations Client
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-espresso-800 mb-2">
+                    Nom et Prénom *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.nom}
+                    onChange={e => setEditForm({ ...editForm, nom: e.target.value })}
+                    className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50"
+                    placeholder="Ex: Martin Dubois"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-espresso-800 mb-2">
+                    Téléphone
+                  </label>
+                  <input
+                    type="tel"
+                    value={editForm.telephone}
+                    onChange={e => setEditForm({ ...editForm, telephone: e.target.value })}
+                    className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50"
+                    placeholder="Ex: 06 12 34 56 78"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-espresso-800 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 font-medium text-espresso-900 bg-parchment-50"
+                    placeholder="votre.email@exemple.com"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between border-b border-parchment-200 pb-3 mb-4">
-                <label className="text-sm font-bold text-espresso-800 uppercase tracking-widest">
-                  Enfant(s)
-                </label>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-parchment-200 pb-2">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-500">
+                  Enfants (Écoles & Niveaux)
+                </h3>
                 <button
                   type="button"
                   onClick={() =>
@@ -304,74 +379,204 @@ function Correction({ onNavigate }: CorrectionProps) {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {editForm.children.map((child, index) => (
-                  <div
-                    key={index}
-                    className="p-5 rounded-2xl bg-parchment-100 border border-parchment-200 relative"
-                  >
-                    {editForm.children.length > 1 && (
-                      <button
-                        onClick={() =>
-                          setEditForm({
-                            ...editForm,
-                            children: editForm.children.filter((_, i) => i !== index),
-                          })
-                        }
-                        className="absolute top-4 right-4 text-terracotta-500 hover:text-terracotta-700"
-                        aria-label="Supprimer cet enfant"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    <h4 className="text-sm font-bold text-espresso-900 mb-4 uppercase tracking-widest">
-                      Enfant {index + 1}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                          École *
-                        </label>
-                        <input
-                          type="text"
-                          value={child.ecole}
-                          onChange={e => {
-                            const val = e.target.value
+              <div className="space-y-6">
+                {editForm.children.map((child, index) => {
+                  const originalChild = editingOrder.children.find(c => c.id === child.id)
+                  return (
+                    <div
+                      key={child.id || `new-${index}`}
+                      className="p-6 rounded-2xl bg-parchment-100 border border-parchment-300 relative"
+                    >
+                      {editForm.children.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
                             setEditForm({
                               ...editForm,
-                              children: editForm.children.map((c, i) =>
-                                i === index ? { ...c, ecole: val } : c
-                              ),
-                            })
-                          }}
-                          className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">
-                          Niveau *
-                        </label>
-                        <select
-                          value={child.niveau}
-                          onChange={e =>
-                            setEditForm({
-                              ...editForm,
-                              children: editForm.children.map((c, i) =>
-                                i === index ? { ...c, niveau: e.target.value } : c
-                              ),
+                              children: editForm.children.filter((_, i) => i !== index),
                             })
                           }
-                          className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl bg-white"
+                          className="absolute top-4 right-4 text-terracotta-500 hover:text-terracotta-700"
+                          aria-label="Supprimer cet enfant"
                         >
-                          <option value="">Sélectionner</option>
-                          {['PS','MS','GS','CP','CE1','CE2','CM1','CM2','CE6','CE7','CE8','CE9','TC','1BAC','2BAC'].map(n => (
-                            <option key={n} value={n}>{n}</option>
-                          ))}
-                        </select>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <div className="flex items-center justify-between mb-4 pr-8">
+                        <h4 className="text-base font-heading font-bold text-espresso-900">
+                          Enfant {index + 1}
+                        </h4>
+                        {originalChild?.code && (
+                          <span className="font-mono font-bold text-amber-700 tracking-widest text-sm">
+                            {originalChild.code}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-bold text-espresso-800 mb-2">
+                            École *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={child.ecole}
+                              onChange={e => {
+                                updateChild(index, 'ecole', e.target.value)
+                                setActiveChildIndex(index)
+                                setShowDropdown(true)
+                              }}
+                              onFocus={() => {
+                                if (ecoles.length > 0) {
+                                  setActiveChildIndex(index)
+                                  setShowDropdown(true)
+                                }
+                              }}
+                              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                              disabled={isLoadingEcoles}
+                              className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 bg-white text-espresso-900 font-medium"
+                              placeholder={isLoadingEcoles ? 'Chargement...' : 'Ex: École Elbilia'}
+                            />
+                            {showDropdown && activeChildIndex === index && getFilteredEcoles(child.ecole).length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white border-2 border-parchment-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                {getFilteredEcoles(child.ecole).map(ecole => (
+                                  <button
+                                    key={ecole}
+                                    type="button"
+                                    onClick={() => {
+                                      updateChild(index, 'ecole', ecole)
+                                      setShowDropdown(false)
+                                    }}
+                                    className="w-full px-4 py-3 text-left hover:bg-parchment-100 font-medium text-espresso-900 border-b border-parchment-100 last:border-0"
+                                  >
+                                    {ecole}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-espresso-800 mb-2">
+                            Niveau *
+                          </label>
+                          <select
+                            value={child.niveau}
+                            onChange={e => updateChild(index, 'niveau', e.target.value)}
+                            className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 bg-white text-espresso-900 font-medium"
+                          >
+                            <option value="">Sélectionnez un niveau</option>
+                            <option value="PS">Petite Section (PS)</option>
+                            <option value="MS">Moyenne Section (MS)</option>
+                            <option value="GS">Grande Section (GS)</option>
+                            <option value="CP">CP</option>
+                            <option value="CE1">CE1</option>
+                            <option value="CE2">CE2</option>
+                            <option value="CM1">CM1</option>
+                            <option value="CM2">CM2</option>
+                            <option value="CE6">CE6</option>
+                            <option value="CE7">CE7</option>
+                            <option value="CE8">CE8</option>
+                            <option value="CE9">CE9</option>
+                            <option value="TC">Tronc Commun (TC)</option>
+                            <option value="1BAC">1ère Année Bac (1BAC)</option>
+                            <option value="2BAC">2ème Année Bac (2BAC)</option>
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-bold text-espresso-800 mb-3">
+                            Genre (Optionnel)
+                          </label>
+                          <div className="flex space-x-6">
+                            <label className="flex items-center space-x-3 cursor-pointer group">
+                              <div className="relative flex items-center justify-center w-6 h-6 border-2 border-parchment-400 rounded-full group-hover:border-amber-500 transition-colors">
+                                <input
+                                  type="radio"
+                                  name={`edit-genre-${index}`}
+                                  value="fille"
+                                  checked={child.genre === 'fille'}
+                                  onChange={() => updateChild(index, 'genre', 'fille')}
+                                  className="sr-only"
+                                />
+                                {child.genre === 'fille' && <div className="w-3 h-3 bg-amber-600 rounded-full" />}
+                              </div>
+                              <span className="font-medium text-espresso-800">Fille</span>
+                            </label>
+                            <label className="flex items-center space-x-3 cursor-pointer group">
+                              <div className="relative flex items-center justify-center w-6 h-6 border-2 border-parchment-400 rounded-full group-hover:border-amber-500 transition-colors">
+                                <input
+                                  type="radio"
+                                  name={`edit-genre-${index}`}
+                                  value="garcon"
+                                  checked={child.genre === 'garcon'}
+                                  onChange={() => updateChild(index, 'genre', 'garcon')}
+                                  className="sr-only"
+                                />
+                                {child.genre === 'garcon' && <div className="w-3 h-3 bg-amber-600 rounded-full" />}
+                              </div>
+                              <span className="font-medium text-espresso-800">Garçon</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-espresso-500 border-b border-parchment-200 pb-2">
+                Options Supplémentaires
+              </h3>
+
+              <label className="flex items-start space-x-4 cursor-pointer group p-4 rounded-xl border-2 border-parchment-200 hover:border-amber-400 hover:bg-amber-50/30 transition-all">
+                <div className="relative flex items-center justify-center w-6 h-6 border-2 border-parchment-400 rounded mt-0.5 group-hover:border-amber-500 transition-colors flex-shrink-0 bg-white">
+                  <input
+                    type="checkbox"
+                    checked={editForm.couverture_demandee}
+                    onChange={e => setEditForm({ ...editForm, couverture_demandee: e.target.checked })}
+                    className="sr-only"
+                  />
+                  {editForm.couverture_demandee && <Check className="h-4 w-4 text-amber-600" strokeWidth={3} />}
+                </div>
+                <div>
+                  <span className="block font-bold text-espresso-900 mb-1">Je souhaite une couverture pour les livres</span>
+                  <span className="block text-sm text-espresso-600">Cochez cette case si vous désirez que nous couvrions vos livres (service payant).</span>
+                </div>
+              </label>
+
+              <div>
+                <label className="block text-sm font-bold text-espresso-800 mb-2">
+                  Avance versée (DHS) - Optionnel
+                </label>
+                <div className="relative max-w-xs">
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={editForm.avance}
+                    onChange={e => setEditForm({ ...editForm, avance: e.target.value })}
+                    className="w-full pl-4 pr-12 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 bg-parchment-50 text-espresso-900 font-medium"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <span className="text-espresso-500 font-bold">DHS</span>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-espresso-800 mb-2">
+                  Note ou instruction spéciale
+                </label>
+                <textarea
+                  rows={3}
+                  value={editForm.note}
+                  onChange={e => setEditForm({ ...editForm, note: e.target.value })}
+                  className="w-full px-4 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 bg-parchment-50 text-espresso-900 font-medium resize-none"
+                  placeholder="Avez-vous une demande particulière ?"
+                />
               </div>
             </div>
 
