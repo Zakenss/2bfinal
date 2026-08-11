@@ -22,9 +22,10 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
 
-  const loadCouvertureOrders = async () => {
+  const loadCouvertureOrders = async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false
     try {
-      setIsLoading(true)
+      if (!silent) setIsLoading(true)
       const { data, error } = await supabase.from('students').select('*').eq('couverture_demandee', true).order('created_at', { ascending: false })
       if (error) throw error
       setBookLists(data || [])
@@ -32,7 +33,7 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
     } catch (error) {
       console.error('Error loading couverture orders:', error)
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }
 
@@ -46,22 +47,51 @@ function CouverturePage({ onNavigate, currentUser }: CouverturePageProps) {
 
   useEffect(() => {
     loadCouvertureOrders()
-    const subscription = supabase.channel('couverture_orders').on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => { loadCouvertureOrders() }).subscribe()
-    const interval = setInterval(loadCouvertureOrders, 180000)
+    const subscription = supabase
+      .channel('couverture_orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        loadCouvertureOrders({ silent: true })
+      })
+      .subscribe()
+    const interval = setInterval(() => loadCouvertureOrders({ silent: true }), 180000)
     return () => { subscription.unsubscribe(); clearInterval(interval) }
   }, [])
 
   const handleMarkAsSent = async (bookList: Student) => {
     if (updatingOrders.has(bookList.id)) return
     setUpdatingOrders(prev => new Set(prev).add(bookList.id))
+
+    const nextSent = !bookList.couverture_sent
+    const nextSentAt = nextSent ? new Date().toISOString() : null
+    const nextSentBy = nextSent ? (currentUser || null) : null
+    const previous = bookList
+
+    // Instant UI update — no full-page reload
+    setBookLists(prev =>
+      prev.map(order =>
+        order.id === bookList.id
+          ? {
+              ...order,
+              couverture_sent: nextSent,
+              couverture_sent_at: nextSentAt,
+              couverture_sent_by: nextSentBy,
+            }
+          : order
+      )
+    )
+
     try {
       const { error } = await supabase.from('students').update({
-        couverture_sent: !bookList.couverture_sent,
-        couverture_sent_at: !bookList.couverture_sent ? new Date().toISOString() : null,
-        couverture_sent_by: !bookList.couverture_sent ? (currentUser || null) : null,
+        couverture_sent: nextSent,
+        couverture_sent_at: nextSentAt,
+        couverture_sent_by: nextSentBy,
       }).eq('id', bookList.id)
       if (error) throw error
-      loadCouvertureOrders()
+    } catch (error) {
+      console.error('Error updating couverture status:', error)
+      // Roll back if the save failed
+      setBookLists(prev => prev.map(order => (order.id === previous.id ? previous : order)))
+      alert("La modification n'a pas pu être enregistrée. Veuillez réessayer.")
     } finally {
       setUpdatingOrders(prev => { const n = new Set(prev); n.delete(bookList.id); return n })
     }
