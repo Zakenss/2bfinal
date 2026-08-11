@@ -334,10 +334,16 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                 )}
 
                 {order.liste_prete && (
-                  <div className="mt-6 pt-6 border-t border-parchment-200 text-center">
+                  <div className="mt-6 pt-6 border-t border-parchment-200 text-center space-y-3">
                     <p className="text-lg font-bold text-green-700 bg-green-50 p-4 rounded-xl border border-green-200">
                       🎉 Votre liste est prête ! Vous pouvez passer la récupérer.
                     </p>
+                    {searchMode === 'code' && order.modified_by && (
+                      <p className="text-sm font-medium text-espresso-700 bg-parchment-100 border border-parchment-300 rounded-xl px-4 py-3">
+                        Préparée par le collaborateur{' '}
+                        <span className="font-bold text-espresso-900">{order.modified_by}</span>
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
