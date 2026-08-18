@@ -67,7 +67,7 @@ export function hasAvanceValue(value: string | number | null | undefined): boole
 
 /**
  * Pick the order avance from sibling rows (first non-null).
- * Used so existing multi-child orders still show the amount entered on child 0.
+ * Used on grouped Correction cards / receipts — still one amount for the order.
  */
 export function pickAvanceFromRows(
   rows: Array<{ avance?: string | number | null }>
@@ -76,28 +76,4 @@ export function pickAvanceFromRows(
     if (hasAvanceValue(row.avance)) return row.avance as string | number
   }
   return null
-}
-
-/**
- * Attach the shared order avance onto rows that are missing it
- * (same client + same created_at batch).
- */
-export function applySharedOrderAvance<T extends {
-  nom?: string | null
-  created_at?: string | null
-  avance?: string | number | null
-}>(rows: T[]): T[] {
-  const byBatch = new Map<string, string | number>()
-  for (const row of rows) {
-    const key = `${row.nom ?? ''}|${row.created_at ?? ''}`
-    if (hasAvanceValue(row.avance) && !byBatch.has(key)) {
-      byBatch.set(key, row.avance as string | number)
-    }
-  }
-  return rows.map(row => {
-    if (hasAvanceValue(row.avance)) return row
-    const key = `${row.nom ?? ''}|${row.created_at ?? ''}`
-    const shared = byBatch.get(key)
-    return shared != null ? { ...row, avance: shared as T['avance'] } : row
-  })
 }
