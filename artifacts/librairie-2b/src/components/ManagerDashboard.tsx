@@ -1,12 +1,27 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { BarChart3, Users, Package, Check, X, Calendar, Search, Filter, Clock, User } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
+import { formatAvanceDisplay, hasAvanceValue, parseAvanceInput } from '../lib/avance'
 
 interface ManagerDashboardProps {
   onNavigate: (page: 'espace-client') => void
 }
 
 const EMPLOYEE_CREDENTIALS: { username: string; password: string; name: string }[] = []
+
+function toLocalDateKey(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function todayLocalDateKey(): string {
+  return toLocalDateKey(new Date().toISOString())
+}
 
 function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
   const [bookLists, setBookLists] = useState<Student[]>([])
@@ -21,6 +36,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
   const [searchCode, setSearchCode] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'pending'>('all')
   const [dateFilter, setDateFilter] = useState('')
+  const [avanceDate, setAvanceDate] = useState(todayLocalDateKey)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingActivities, setIsLoadingActivities] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
@@ -29,6 +45,25 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
     ready: 0,
     pending: 0,
   })
+
+  const dailyAvances = useMemo(() => {
+    if (!avanceDate) return []
+    return bookLists
+      .filter(order => hasAvanceValue(order.avance) && toLocalDateKey(order.created_at) === avanceDate)
+      .map(order => ({
+        id: order.id,
+        nom: order.nom ?? '—',
+        code: order.code ?? '',
+        avance: order.avance,
+        amount: parseAvanceInput(order.avance) ?? 0,
+      }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  }, [bookLists, avanceDate])
+
+  const dailyAvanceTotal = useMemo(
+    () => dailyAvances.reduce((sum, row) => sum + row.amount, 0),
+    [dailyAvances]
+  )
 
   const handleBackToHome = () => {
     window.location.reload()
@@ -292,6 +327,60 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
             <p className="text-5xl font-heading font-bold text-espresso-900 mt-auto">{stats.pending}</p>
           </div>
         </div>
+      </div>
+
+      {/* Avances par jour */}
+      <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-6 md:p-8 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-6">
+          <div className="flex-1">
+            <h2 className="text-xl font-heading font-bold text-espresso-900 mb-1 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-amber-700" />
+              Avances du jour
+            </h2>
+            <p className="text-sm text-espresso-600 font-medium">
+              Sélectionnez une date pour voir le total des avances et le détail par client.
+            </p>
+          </div>
+          <div className="w-full md:w-64">
+            <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Date</label>
+            <input
+              type="date"
+              value={avanceDate}
+              onChange={(e) => setAvanceDate(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
+            />
+          </div>
+        </div>
+
+        {!avanceDate ? (
+          <p className="text-espresso-500 font-medium text-sm">Choisissez une date pour afficher les avances.</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-4 pb-4 border-b border-parchment-200">
+              <span className="text-sm font-bold uppercase tracking-widest text-espresso-500">Total</span>
+              <span className="text-3xl font-heading font-bold text-green-700">
+                {formatAvanceDisplay(dailyAvanceTotal) || '0'} DHS
+              </span>
+              <span className="text-sm text-espresso-500 font-medium">
+                ({dailyAvances.length} avance{dailyAvances.length === 1 ? '' : 's'})
+              </span>
+            </div>
+
+            {dailyAvances.length === 0 ? (
+              <p className="text-espresso-500 font-medium text-sm">Aucune avance enregistrée pour cette date.</p>
+            ) : (
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                {dailyAvances.map(row => (
+                  <span key={row.id} className="inline-flex items-baseline gap-1.5 bg-parchment-50 border border-parchment-200 rounded-lg px-3 py-1.5">
+                    <span className="font-medium text-espresso-900">{row.nom}</span>
+                    <span className="text-espresso-400">—</span>
+                    <span className="font-bold text-green-700">{formatAvanceDisplay(row.avance)} DHS</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Employee Activity Log Toggle */}
