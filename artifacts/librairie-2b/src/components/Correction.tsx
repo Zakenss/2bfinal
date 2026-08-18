@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { CreditCard as Edit, Search, Plus, Trash2, Printer, Check } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 import { buildReceiptHTML } from '../lib/receiptBuilder'
+import { formatAvanceDisplay, hasAvanceValue, parseAvanceInput, pickAvanceFromRows } from '../lib/avance'
 
 interface CorrectionProps {
   onNavigate: (page: 'espace-client') => void
@@ -76,12 +77,22 @@ function Correction({ onNavigate }: CorrectionProps) {
           nom: order.nom ?? '',
           email: order.email ?? '',
           telephone: order.telephone ?? '',
+          // Avance is only on first child — keep whatever non-null value we find
           avance: order.avance,
           note: order.note ?? '',
           couverture_demandee: order.couverture_demandee ?? false,
           created_at: order.created_at ?? '',
           children: [],
         }
+      } else if (grouped[key].avance == null && order.avance != null) {
+        // Don't lose the real avance if a null sibling row was seen first
+        grouped[key].avance = order.avance
+      }
+      if (!grouped[key].note && order.note) {
+        grouped[key].note = order.note
+      }
+      if (order.couverture_demandee) {
+        grouped[key].couverture_demandee = true
       }
       grouped[key].children.push(order)
       if (new Date(order.created_at ?? '') < new Date(grouped[key].created_at)) {
@@ -165,7 +176,7 @@ function Correction({ onNavigate }: CorrectionProps) {
     const html = buildReceiptHTML({
       nom: order.nom,
       telephone: order.telephone || null,
-      avance: order.avance ?? null,
+      avance: order.avance ?? pickAvanceFromRows(order.children),
       note: order.note || null,
       couverture_demandee: order.couverture_demandee,
       created_at: order.created_at,
@@ -216,7 +227,7 @@ function Correction({ onNavigate }: CorrectionProps) {
       })),
       email: order.email,
       telephone: order.telephone,
-      avance: order.avance?.toString() || '',
+      avance: formatAvanceDisplay(order.avance ?? order.children.find(c => c.avance != null)?.avance ?? ''),
       note: order.note || '',
       couverture_demandee: order.couverture_demandee,
     })
@@ -242,35 +253,45 @@ function Correction({ onNavigate }: CorrectionProps) {
     if (!editForm || !editingOrder) return
     setIsUpdating(true)
     try {
+      const parsedAvance = parseAvanceInput(editForm.avance)
       const sharedFields = {
         nom: editForm.nom.trim(),
         email: editForm.email.trim(),
         telephone: editForm.telephone.trim(),
-        avance: editForm.avance ? parseFloat(editForm.avance) : null,
         note: editForm.note.trim(),
         couverture_demandee: editForm.couverture_demandee,
       }
 
+      // Avance stays on the first child only (same rule as Commande Client)
       const updatePromises = editForm.children
         .filter(c => c.id)
-        .map(child =>
-          supabase
+        .map((child) => {
+          const isFirstChild = editForm.children.findIndex(c => c.id === child.id) === 0
+          return supabase
             .from('students')
-            .update({ ...sharedFields, ecole: child.ecole.trim(), niveau: child.niveau.trim(), genre: child.genre || null })
+            .update({
+              ...sharedFields,
+              ecole: child.ecole.trim(),
+              niveau: child.niveau.trim(),
+              genre: child.genre || null,
+              avance: isFirstChild ? parsedAvance : null,
+            })
             .eq('id', child.id)
-        )
+        })
 
       const insertPromises = editForm.children
         .filter(c => !c.id)
-        .map(child =>
-          supabase.from('students').insert([{
+        .map((child) => {
+          const isFirstChild = editForm.children[0] === child
+          return supabase.from('students').insert([{
             code: generateCode(),
             ...sharedFields,
             ecole: child.ecole.trim(),
             niveau: child.niveau.trim(),
             genre: child.genre || null,
+            avance: isFirstChild ? parsedAvance : null,
           }])
-        )
+        })
 
       const removedChildren = editingOrder.children.filter(
         orig => !editForm.children.some(f => f.id === orig.id)
@@ -552,13 +573,19 @@ function Correction({ onNavigate }: CorrectionProps) {
                 </label>
                 <div className="relative max-w-xs">
                   <input
-                    type="number"
-                    min="0"
-                    step="10"
+                    type="text"
+                    inputMode="decimal"
                     value={editForm.avance}
-                    onChange={e => setEditForm({ ...editForm, avance: e.target.value })}
+                    onChange={e =>
+                      setEditForm({
+                        ...editForm,
+                        avance: e.target.value.replace(/[^\d.,]/g, ''),
+                      })
+                    }
+                    onWheel={e => (e.target as HTMLInputElement).blur()}
                     className="w-full pl-4 pr-12 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 bg-parchment-50 text-espresso-900 font-medium"
                     placeholder="0"
+                    autoComplete="off"
                   />
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <span className="text-espresso-500 font-bold">DHS</span>
@@ -708,10 +735,10 @@ function Correction({ onNavigate }: CorrectionProps) {
                         <span className="font-medium">{group.email}</span>
                       </div>
                     )}
-                    {group.avance != null && (
+                    {hasAvanceValue(group.avance ?? pickAvanceFromRows(group.children)) && (
                       <div className="text-sm">
                         <span className="font-bold text-espresso-500 uppercase tracking-widest mr-2">Avance:</span>
-                        <span className="font-bold text-green-700">{group.avance} DHS</span>
+                        <span className="font-bold text-green-700">{formatAvanceDisplay(group.avance ?? pickAvanceFromRows(group.children))} DHS</span>
                       </div>
                     )}
                     {group.couverture_demandee && (

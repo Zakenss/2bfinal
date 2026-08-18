@@ -1,9 +1,32 @@
 import React, { useState } from 'react'
 import { Search, Package, Check, X, Clock, User, School } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
+import { applySharedOrderAvance, formatAvanceDisplay, hasAvanceValue, pickAvanceFromRows } from '../lib/avance'
 
 interface FollowUpProps {
   onNavigate: (page: 'espace-client') => void
+}
+
+/** For existing orders: if this row has no avance, load it from the first child of the same order. */
+async function withOrderAvance(order: Student): Promise<Student> {
+  if (hasAvanceValue(order.avance)) return order
+
+  let query = supabase
+    .from('students')
+    .select('avance')
+    .eq('nom', order.nom ?? '')
+    .not('avance', 'is', null)
+
+  if (order.created_at) {
+    query = query.eq('created_at', order.created_at)
+  }
+
+  const { data, error } = await query.limit(5)
+  if (error || !data?.length) return order
+
+  const shared = pickAvanceFromRows(data)
+  if (!hasAvanceValue(shared)) return order
+  return { ...order, avance: shared as Student['avance'] }
 }
 
 function FollowUp({ onNavigate }: FollowUpProps) {
@@ -81,7 +104,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
     try {
       const { data, error } = await supabase.from('students').select('*').eq('code', searchCode).single()
       if (error || !data) setNotFound(true)
-      else setBookList(data)
+      else setBookList(await withOrderAvance(data))
     } catch {
       setNotFound(true)
     } finally {
@@ -98,7 +121,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
       const { data, error } = await supabase.from('students').select('*').eq('ecole', schoolSearch.ecole).eq('niveau', schoolSearch.niveau).order('created_at', { ascending: false })
       if (error) throw error
       if (!data || data.length === 0) setNotFound(true)
-      else setSchoolResults(data)
+      else setSchoolResults(applySharedOrderAvance(data))
     } catch {
       setNotFound(true)
     } finally {
@@ -116,7 +139,7 @@ function FollowUp({ onNavigate }: FollowUpProps) {
       const { data, error } = await supabase.from('students').select('*').eq('nom', nameSearch.trim()).order('created_at', { ascending: false })
       if (error) throw error
       if (!data || data.length === 0) setNotFound(true)
-      else setNameResults(data)
+      else setNameResults(applySharedOrderAvance(data))
     } catch {
       setNotFound(true)
     } finally {
@@ -312,10 +335,10 @@ function FollowUp({ onNavigate }: FollowUpProps) {
                     <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Niveau</span>
                     <span className="text-lg font-medium text-espresso-900">{order.niveau}</span>
                   </div>
-                  {order.avance != null && (
+                  {hasAvanceValue(order.avance) && (
                     <div>
                       <span className="block text-xs font-bold uppercase tracking-widest text-espresso-500 mb-1">Avance versée</span>
-                      <span className="text-lg font-bold text-green-700">{order.avance} DHS</span>
+                      <span className="text-lg font-bold text-green-700">{formatAvanceDisplay(order.avance)} DHS</span>
                     </div>
                   )}
                 </div>

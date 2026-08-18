@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BookOpen, Check, Download, Printer, X, Plus, School, User, Mail, Phone, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { buildReceiptHTML } from '../lib/receiptBuilder'
+import { formatAvanceDisplay, parseAvanceInput } from '../lib/avance'
 
 interface FormData {
   nom: string
@@ -134,7 +135,8 @@ function ClientForm({ onNavigate }: ClientFormProps) {
           genre: child.genre || null,
           email: formData.email.trim() || null,
           telephone: formData.telephone.trim() || null,
-          avance: (index === 0 && formData.avance && formData.avance.trim()) ? parseFloat(formData.avance) : null,
+          // Avance is stored on the first child only — amount must match what the user typed
+          avance: index === 0 ? parseAvanceInput(formData.avance) : null,
           note: formData.note.trim() || null,
           couverture_demandee: Boolean(formData.couverture_demandee),
           liste_prete: false,
@@ -165,7 +167,7 @@ function ClientForm({ onNavigate }: ClientFormProps) {
             genre: child.genre,
             email: formData.email.trim(),
             telephone: formData.telephone.trim(),
-            avance: formData.avance && formData.avance.trim() ? parseFloat(formData.avance) : null,
+            avance: parseAvanceInput(formData.avance),
             note: formData.note.trim(),
             couverture_demandee: formData.couverture_demandee,
           };
@@ -240,7 +242,13 @@ function ClientForm({ onNavigate }: ClientFormProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    if (name === 'nom' || name === 'email' || name === 'telephone' || name === 'avance' || name === 'note') {
+    if (name === 'avance') {
+      // Allow digits, one decimal separator (. or ,), no step snapping / scroll mutation
+      const cleaned = value.replace(/[^\d.,]/g, '')
+      setFormData(prev => ({ ...prev, avance: cleaned }))
+      return
+    }
+    if (name === 'nom' || name === 'email' || name === 'telephone' || name === 'note') {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
   }
@@ -309,7 +317,7 @@ function ClientForm({ onNavigate }: ClientFormProps) {
     const html = buildReceiptHTML({
       nom: fd.nom,
       telephone: fd.telephone || null,
-      avance: fd.avance || null,
+      avance: parseAvanceInput(fd.avance),
       note: fd.note || null,
       couverture_demandee: fd.couverture_demandee,
       children,
@@ -364,7 +372,7 @@ function ClientForm({ onNavigate }: ClientFormProps) {
         <div className="bg-parchment-100 rounded-2xl p-5 mb-6 border border-parchment-300 text-sm space-y-2">
           <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Client</span><span className="font-medium text-espresso-900">{R.formData?.nom}</span></div>
           {R.formData?.telephone && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Téléphone</span><span className="font-medium">{R.formData.telephone}</span></div>}
-          {R.formData?.avance && R.formData.avance !== '0' && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Avance</span><span className="font-medium text-green-700">{R.formData.avance} DHS</span></div>}
+          {R.formData?.avance && R.formData.avance !== '0' && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Avance</span><span className="font-medium text-green-700">{formatAvanceDisplay(R.formData.avance)} DHS</span></div>}
           {R.formData?.couverture_demandee && <div className="flex justify-between"><span className="font-bold text-espresso-500 uppercase tracking-widest text-xs">Couverture</span><span className="font-medium">Oui</span></div>}
         </div>
 
@@ -689,15 +697,16 @@ function ClientForm({ onNavigate }: ClientFormProps) {
                 </label>
                 <div className="relative max-w-xs">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     id="avance"
                     name="avance"
-                    min="0"
-                    step="10"
                     value={formData.avance}
                     onChange={handleInputChange}
+                    onWheel={e => (e.target as HTMLInputElement).blur()}
                     className="w-full pl-4 pr-12 py-3.5 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
                     placeholder="0"
+                    autoComplete="off"
                   />
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <span className="text-espresso-500 font-bold">DHS</span>

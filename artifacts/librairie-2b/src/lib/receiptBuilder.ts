@@ -1,3 +1,5 @@
+import { formatAvanceDisplay, parseAvanceInput } from './avance'
+
 export interface ReceiptChild {
   ecole: string
   niveau: string
@@ -33,7 +35,8 @@ export function buildReceiptHTML(data: ReceiptData): string {
   const timeStr = baseDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
   const multiChild = data.children.length > 1
-  const avanceNum = typeof data.avance === 'string' ? parseFloat(data.avance) : (data.avance ?? 0)
+  const avanceParsed = parseAvanceInput(data.avance)
+  const avanceLabel = formatAvanceDisplay(data.avance)
 
   const codeBlocks = data.children.map((child, i) => {
     const label = multiChild ? `Enfant ${i + 1}` : 'Code'
@@ -58,8 +61,8 @@ export function buildReceiptHTML(data: ReceiptData): string {
     ? `${blockTitle('Couverture')}${line('Couverture', 'Demandée')}`
     : ''
 
-  const avanceSection = avanceNum && avanceNum > 0
-    ? `${blockTitle('Avance')}${line('Avance', `${avanceNum} DHS`)}`
+  const avanceSection = avanceParsed != null && avanceParsed > 0
+    ? `${blockTitle('Avance')}${line('Avance', `${avanceLabel} DHS`)}`
     : ''
 
   const noteSection = data.note
