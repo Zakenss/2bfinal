@@ -229,7 +229,7 @@ function App() {
               </h3>
             </div>
             <p className="text-espresso-700 mb-4 leading-relaxed">
-              Tableau de bord et statistiques
+              Tableau de bord, totaux du jour et statistiques
             </p>
             <div className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-espresso-200 text-espresso-800">
               Privé

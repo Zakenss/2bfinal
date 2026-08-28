@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { BarChart3, Users, Package, Check, X, Calendar, Search, Filter, Clock, User } from 'lucide-react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { BarChart3, Users, Package, Check, X, Calendar, Search, Clock, User, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react'
 import { supabase, Student } from '../lib/supabase'
 import { formatAvanceDisplay, hasAvanceValue, parseAvanceInput } from '../lib/avance'
 
@@ -23,6 +23,70 @@ function todayLocalDateKey(): string {
   return toLocalDateKey(new Date().toISOString())
 }
 
+function shiftDateKey(dateKey: string, days: number): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  dt.setDate(dt.getDate() + days)
+  const yy = dt.getFullYear()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
+
+function localDayRange(dateKey: string): { start: string; end: string } {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  const start = new Date(y, m - 1, d, 0, 0, 0, 0)
+  const end = new Date(y, m - 1, d + 1, 0, 0, 0, 0)
+  return { start: start.toISOString(), end: end.toISOString() }
+}
+
+function formatFrenchLongDate(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  if (!y || !m || !d) return ''
+  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function relativeDayLabel(dateKey: string): string | null {
+  const today = todayLocalDateKey()
+  if (dateKey === today) return "Aujourd'hui"
+  if (dateKey === shiftDateKey(today, -1)) return 'Hier'
+  if (dateKey === shiftDateKey(today, 1)) return 'Demain'
+  return null
+}
+
+function orderBatchKey(order: Pick<Student, 'nom' | 'created_at'>): string {
+  return `${order.nom ?? ''}|${order.created_at ?? ''}`
+}
+
+function summarizeDailyOrders(rows: Student[]) {
+  const groups = new Map<string, Student[]>()
+  for (const row of rows) {
+    const key = orderBatchKey(row)
+    const existing = groups.get(key)
+    if (existing) existing.push(row)
+    else groups.set(key, [row])
+  }
+
+  let ready = 0
+  let pending = 0
+  for (const children of groups.values()) {
+    if (children.every(child => child.liste_prete)) ready += 1
+    else pending += 1
+  }
+
+  return {
+    commandes: groups.size,
+    listes: rows.length,
+    ready,
+    pending,
+  }
+}
+
 function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
   const [bookLists, setBookLists] = useState<Student[]>([])
   const [filteredBookLists, setFilteredBookLists] = useState<Student[]>([])
@@ -36,7 +100,14 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
   const [searchCode, setSearchCode] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'pending'>('all')
   const [dateFilter, setDateFilter] = useState('')
-  const [avanceDate, setAvanceDate] = useState(todayLocalDateKey)
+  const [selectedDay, setSelectedDay] = useState(todayLocalDateKey)
+  const [dailyOrderStats, setDailyOrderStats] = useState({
+    commandes: 0,
+    listes: 0,
+    ready: 0,
+    pending: 0,
+  })
+  const [isLoadingDailyOrders, setIsLoadingDailyOrders] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingActivities, setIsLoadingActivities] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
@@ -47,26 +118,88 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
   })
 
   const dailyAvances = useMemo(() => {
-    if (!avanceDate) return []
-    return bookLists
-      .filter(order => hasAvanceValue(order.avance) && toLocalDateKey(order.created_at) === avanceDate)
-      .map(order => ({
+    if (!selectedDay) return []
+    const seenOrders = new Set<string>()
+    const rows: Array<{
+      id: string
+      nom: string
+      code: string
+      avance: Student['avance']
+      amount: number
+    }> = []
+
+    for (const order of bookLists) {
+      if (!hasAvanceValue(order.avance)) continue
+      if (toLocalDateKey(order.created_at) !== selectedDay) continue
+
+      // One avance per client order (same created_at batch) — never count sibling kids twice
+      const orderKey = orderBatchKey(order)
+      if (seenOrders.has(orderKey)) continue
+      seenOrders.add(orderKey)
+
+      rows.push({
         id: order.id,
         nom: order.nom ?? '—',
         code: order.code ?? '',
         avance: order.avance,
         amount: parseAvanceInput(order.avance) ?? 0,
-      }))
-      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
-  }, [bookLists, avanceDate])
+      })
+    }
+
+    return rows.sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  }, [bookLists, selectedDay])
 
   const dailyAvanceTotal = useMemo(
     () => dailyAvances.reduce((sum, row) => sum + row.amount, 0),
     [dailyAvances]
   )
 
+  const selectedDayRef = useRef(selectedDay)
+  selectedDayRef.current = selectedDay
+
   const handleBackToHome = () => {
     window.location.reload()
+  }
+
+  const loadDailyOrderStats = async (dateKey = selectedDayRef.current) => {
+    if (!dateKey) {
+      setDailyOrderStats({ commandes: 0, listes: 0, ready: 0, pending: 0 })
+      return
+    }
+
+    setIsLoadingDailyOrders(true)
+    try {
+      const { start, end } = localDayRange(dateKey)
+      const pageSize = 1000
+      let from = 0
+      const rows: Student[] = []
+
+      while (true) {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, nom, created_at, liste_prete')
+          .gte('created_at', start)
+          .lt('created_at', end)
+          .order('created_at', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) throw error
+        rows.push(...((data || []) as Student[]))
+        if (!data || data.length < pageSize) break
+        from += pageSize
+      }
+
+      if (selectedDayRef.current !== dateKey) return
+      setDailyOrderStats(summarizeDailyOrders(rows))
+    } catch (error) {
+      console.error('Error loading daily order count:', error)
+      if (selectedDayRef.current !== dateKey) return
+      setDailyOrderStats({ commandes: 0, listes: 0, ready: 0, pending: 0 })
+    } finally {
+      if (selectedDayRef.current === dateKey) {
+        setIsLoadingDailyOrders(false)
+      }
+    }
   }
 
   useEffect(() => {
@@ -81,6 +214,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
         { event: '*', schema: 'public', table: 'students' }, 
         () => {
           loadBookLists()
+          loadDailyOrderStats()
           if (showActivityLog) loadEmployeeActivities()
         }
       )
@@ -88,6 +222,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
 
     const refreshInterval = setInterval(() => {
       loadBookLists()
+      loadDailyOrderStats()
     }, 180000)
 
     return () => {
@@ -95,6 +230,10 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
       clearInterval(refreshInterval)
     }
   }, [showActivityLog])
+
+  useEffect(() => {
+    loadDailyOrderStats(selectedDay)
+  }, [selectedDay])
 
   useEffect(() => {
     filterBookLists()
@@ -161,10 +300,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
     }
 
     if (dateFilter) {
-      filtered = filtered.filter(item => {
-        const itemDate = new Date(item.created_at ?? '').toISOString().split('T')[0]
-        return itemDate === dateFilter
-      })
+      filtered = filtered.filter(item => toLocalDateKey(item.created_at) === dateFilter)
     }
 
     if (statusFilter === 'ready') {
@@ -198,6 +334,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
 
   const handleManualRefresh = () => {
     loadBookLists()
+    loadDailyOrderStats()
     if (showActivityLog) loadEmployeeActivities()
   }
 
@@ -254,7 +391,7 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
           Tableau de Bord
         </h1>
         <p className="text-lg text-espresso-600 font-medium">
-          Vue d'ensemble de toutes les commandes
+          Vue d'ensemble et total des commandes par jour
         </p>
         <div className="mt-4 flex items-center justify-center space-x-4">
           <p className="text-sm text-espresso-500 font-medium">
@@ -329,6 +466,131 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
         </div>
       </div>
 
+      {/* Commandes du jour — total count for a selected date, not an order list */}
+      <div className="relative overflow-hidden rounded-3xl shadow-book border border-espresso-800 mb-8 bg-espresso-900 text-parchment-100">
+        <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-500/10 pointer-events-none" />
+        <div className="absolute -left-10 -bottom-20 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
+        <div className="relative p-6 md:p-8">
+          <div className="flex flex-col xl:flex-row xl:items-center gap-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <ClipboardList className="h-5 w-5 text-amber-400" />
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+                  Commandes du jour
+                </p>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-heading font-bold capitalize">
+                {formatFrenchLongDate(selectedDay)}
+              </h2>
+              {relativeDayLabel(selectedDay) && (
+                <p className="mt-1 text-sm font-semibold text-amber-200">
+                  {relativeDayLabel(selectedDay)}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDay(prev => shiftDateKey(prev, -1))}
+                  className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+                  aria-label="Jour précédent"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <input
+                  type="date"
+                  value={selectedDay}
+                  onChange={(e) => {
+                    if (e.target.value) setSelectedDay(e.target.value)
+                  }}
+                  className="px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-parchment-100 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 [color-scheme:dark]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSelectedDay(prev => shiftDateKey(prev, 1))}
+                  className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+                  aria-label="Jour suivant"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDay(todayLocalDateKey())}
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
+                    selectedDay === todayLocalDateKey()
+                      ? 'bg-amber-500 text-espresso-950'
+                      : 'bg-white/10 hover:bg-white/20 text-parchment-100'
+                  }`}
+                >
+                  Aujourd'hui
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDay(shiftDateKey(todayLocalDateKey(), -1))}
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
+                    selectedDay === shiftDateKey(todayLocalDateKey(), -1)
+                      ? 'bg-amber-500 text-espresso-950'
+                      : 'bg-white/10 hover:bg-white/20 text-parchment-100'
+                  }`}
+                >
+                  Hier
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1 rounded-2xl bg-white/10 border border-white/10 p-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-200 mb-2">
+                Total commandes
+              </p>
+              {isLoadingDailyOrders ? (
+                <div className="h-16 flex items-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-300" />
+                </div>
+              ) : (
+                <p className="text-6xl md:text-7xl font-heading font-bold tabular-nums leading-none">
+                  {dailyOrderStats.commandes}
+                </p>
+              )}
+              <p className="mt-3 text-sm text-parchment-200 font-medium">
+                {dailyOrderStats.commandes === 1 ? 'commande client' : 'commandes clients'}
+                {dailyOrderStats.commandes === 0 ? ' ce jour-là' : ' ce jour'}
+              </p>
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+              <div className="rounded-2xl bg-white/10 border border-white/10 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-green-200 mb-2">Prêtes</p>
+                <p className="text-4xl font-heading font-bold tabular-nums">
+                  {isLoadingDailyOrders ? '—' : dailyOrderStats.ready}
+                </p>
+                <p className="mt-2 text-xs text-parchment-300 font-medium">Listes entièrement prêtes</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 border border-white/10 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-200 mb-2">En attente</p>
+                <p className="text-4xl font-heading font-bold tabular-nums">
+                  {isLoadingDailyOrders ? '—' : dailyOrderStats.pending}
+                </p>
+                <p className="mt-2 text-xs text-parchment-300 font-medium">Encore à préparer</p>
+              </div>
+              <div className="col-span-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-4 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-parchment-200">
+                  {dailyOrderStats.listes} liste{dailyOrderStats.listes === 1 ? '' : 's'} (enfants)
+                </span>
+                <span className="text-sm font-medium text-parchment-200">
+                  {formatAvanceDisplay(dailyAvanceTotal) || '0'} DHS d'avances
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Avances par jour */}
       <div className="bg-white rounded-3xl shadow-book border border-parchment-300 p-6 md:p-8 mb-10">
         <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-6">
@@ -338,21 +600,12 @@ function ManagerDashboard({ onNavigate }: ManagerDashboardProps) {
               Avances du jour
             </h2>
             <p className="text-sm text-espresso-600 font-medium">
-              Sélectionnez une date pour voir le total des avances et le détail par client.
+              Total des avances pour {relativeDayLabel(selectedDay)?.toLowerCase() ?? formatFrenchLongDate(selectedDay)}.
             </p>
-          </div>
-          <div className="w-full md:w-64">
-            <label className="block text-xs font-bold text-espresso-500 uppercase tracking-widest mb-2">Date</label>
-            <input
-              type="date"
-              value={avanceDate}
-              onChange={(e) => setAvanceDate(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-parchment-300 rounded-xl focus:ring-0 focus:border-amber-500 transition-colors bg-parchment-50 text-espresso-900 font-medium"
-            />
           </div>
         </div>
 
-        {!avanceDate ? (
+        {!selectedDay ? (
           <p className="text-espresso-500 font-medium text-sm">Choisissez une date pour afficher les avances.</p>
         ) : (
           <>
